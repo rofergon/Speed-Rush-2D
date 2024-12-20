@@ -46,9 +46,9 @@ export function UnityGame() {
         loaderScript.onload = async () => {
           try {
             const config = {
-              dataUrl: "/Build/build-run.data.br",
-              frameworkUrl: "/Build/build-run.framework.js.br",
-              codeUrl: "/Build/build-run.wasm.br",
+              dataUrl: "/Build/build-run.data",
+              frameworkUrl: "/Build/build-run.framework.js",
+              codeUrl: "/Build/build-run.wasm",
               streamingAssetsUrl: "StreamingAssets",
               companyName: "Saritu.eth gaming",
               productName: "Rush racing",
