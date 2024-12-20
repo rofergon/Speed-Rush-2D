@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && npm run copy-unity",
-    "copy-unity": "cp -r public/Build dist/",
+    "copy-unity": "xcopy /E /I /Y public\\Build dist\\Build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
