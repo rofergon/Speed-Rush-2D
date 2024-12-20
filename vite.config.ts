@@ -1,36 +1,45 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
-  publicDir: 'src/public',
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    copyPublicDir: true,
-    target: 'esnext',
-    rollupOptions: {
-      output: {
-        manualChunks: undefined
-      }
-    }
-  },
   server: {
+    port: 5173,
+    host: true,
+    strictPort: true,
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Resource-Policy': 'cross-origin',
       'Access-Control-Allow-Origin': '*'
-    },
-    fs: {
-      strict: false,
-      allow: ['..']
-    },
-    middlewareMode: false,
+    }
   },
+  preview: {
+    port: 5173,
+    host: true,
+    strictPort: true,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), './src'),
+    },
+  },
+  // Configuración para servir archivos estáticos
+  publicDir: 'src/public',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: true,
+    // Configuración para manejar archivos grandes
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+    // Asegurarse de que los archivos .br se copien sin procesar
+    copyPublicDir: true,
+  },
+  // Incluir tipos de archivos adicionales
   assetsInclude: ['**/*.br', '**/*.wasm', '**/*.unityweb'],
 });
