@@ -4,13 +4,30 @@
   "outputDirectory": "dist",
   "public": true,
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/Build/(.*)", "destination": "/src/public/Build/$1" },
+    { "source": "/(.*)", "destination": "/src/public/$1" }
+  ],
   "headers": [
     {
-      "source": "/Build/(.*)\\.br$",
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "require-corp"
+        }
+      ]
+    },
+    {
+      "source": "/src/public/Build/(.*)\\.br$",
       "headers": [
         {
           "key": "Content-Type",
-          "value": "application/javascript"
+          "value": "application/javascript; charset=utf-8"
         },
         {
           "key": "Content-Encoding",
@@ -31,11 +48,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Vary",
+          "value": "Accept-Encoding"
         }
       ]
     },
     {
-      "source": "/Build/(.*)\\.data$",
+      "source": "/src/public/Build/(.*)\\.data$",
       "headers": [
         {
           "key": "Content-Type",
@@ -60,7 +81,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.wasm$",
+      "source": "/src/public/Build/(.*)\\.wasm$",
       "headers": [
         {
           "key": "Content-Type",
@@ -85,7 +106,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.js$",
+      "source": "/src/public/Build/(.*)\\.js$",
       "headers": [
         {
           "key": "Content-Type",
