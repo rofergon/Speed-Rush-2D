@@ -27,8 +27,16 @@
       ]
     },
     {
-      "source": "/Build/(.*)",
+      "source": "/Build/(.*)\\.br$",
       "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        },
+        {
+          "key": "Content-Encoding",
+          "value": "br"
+        },
         {
           "key": "Access-Control-Allow-Origin",
           "value": "*"
@@ -48,15 +56,60 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.br$",
+      "source": "/Build/(.*)\\.data\\.br$",
       "headers": [
         {
           "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
+          "value": "application/octet-stream"
         },
         {
           "key": "Content-Encoding",
           "value": "br"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/Build/(.*)\\.wasm\\.br$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/wasm"
+        },
+        {
+          "key": "Content-Encoding",
+          "value": "br"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },
@@ -65,25 +118,23 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        }
-      ]
-    },
-    {
-      "source": "/Build/(.*)\\.wasm$",
-      "headers": [
+          "value": "application/javascript"
+        },
         {
-          "key": "Content-Type",
-          "value": "application/wasm"
-        }
-      ]
-    },
-    {
-      "source": "/Build/(.*)\\.data$",
-      "headers": [
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
         {
-          "key": "Content-Type",
-          "value": "application/octet-stream"
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     }
