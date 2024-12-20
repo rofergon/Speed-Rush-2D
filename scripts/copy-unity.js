@@ -56,9 +56,10 @@ try {
     // Listar el contenido del directorio actual
     console.log('Current working directory:', process.cwd());
     console.log('Contents of current directory:', readdirSync('.'));
-    console.log('Contents of public directory:', existsSync('public') ? readdirSync('public') : 'public directory not found');
+    console.log('Contents of src directory:', existsSync('src') ? readdirSync('src') : 'src directory not found');
+    console.log('Contents of src/public directory:', existsSync('src/public') ? readdirSync('src/public') : 'src/public directory not found');
 
-    const sourceDir = join(rootDir, 'public', 'Build');
+    const sourceDir = join(rootDir, 'src', 'public', 'Build');
     const targetDir = join(rootDir, 'dist', 'Build');
 
     console.log('Source directory:', sourceDir);
@@ -68,10 +69,10 @@ try {
     // Intentar diferentes rutas si la principal no funciona
     const possibleSourceDirs = [
         sourceDir,
+        join(process.cwd(), 'src', 'public', 'Build'),
+        join(process.cwd(), 'src', 'Build'),
         join(process.cwd(), 'public', 'Build'),
-        join(process.cwd(), 'Build'),
-        join(process.cwd(), 'public', 'build'),
-        join(process.cwd(), 'build')
+        join(process.cwd(), 'Build')
     ];
 
     let success = false;

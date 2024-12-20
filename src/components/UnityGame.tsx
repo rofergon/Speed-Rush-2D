@@ -40,15 +40,15 @@ export function UnityGame() {
         window.addEventListener('resize', updateCanvasSize);
 
         const loaderScript = document.createElement('script');
-        loaderScript.src = '/Build/build-run.loader.js';
+        loaderScript.src = '/src/public/Build/build-run.loader.js';
         loaderScript.async = true;
 
         loaderScript.onload = async () => {
           try {
             const config = {
-              dataUrl: "/Build/build-run.data.br",
-              frameworkUrl: "/Build/build-run.framework.js.br",
-              codeUrl: "/Build/build-run.wasm.br",
+              dataUrl: "/src/public/Build/build-run.data.br",
+              frameworkUrl: "/src/public/Build/build-run.framework.js.br",
+              codeUrl: "/src/public/Build/build-run.wasm.br",
               streamingAssetsUrl: "StreamingAssets",
               companyName: "Saritu.eth gaming",
               productName: "Rush racing",
