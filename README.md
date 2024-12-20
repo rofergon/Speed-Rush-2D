@@ -2,6 +2,10 @@
 
 A high-speed 2D racing game built for the Lens Network ecosystem using Thirdweb, React, and Unity WebGL.
 
+## 🎮 Live Demo
+
+🚀 [Play Now on Vercel](https://speed-rush-2d.vercel.app)
+
 ## 🎮 Features
 
 - **AI-Generated Vehicles**: Unique cars are automatically generated through AI agent when minting from the smart contract. Each vehicle is created as a unique asset with its own characteristics and performance stats, directly integrated into the game
