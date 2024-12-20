@@ -48,19 +48,19 @@ export function UnityGame() {
               companyName: "Saritu.eth gaming",
               productName: "Rush racing",
               productVersion: "1.0",
-              matchWebGLToCanvasSize: false,
-              devicePixelRatio: 1,
+              matchWebGLToCanvasSize: true,
+              devicePixelRatio: window.devicePixelRatio,
               preserveDrawingBuffer: true,
               powerPreference: "high-performance",
               failIfMajorPerformanceCaveat: false,
               showBanner: (msg: string, type: string) => {
                 console.warn('Unity Banner:', msg, type);
-                if (type === 'error' && loadingBarRef.current) {
-                  loadingBarRef.current.innerHTML = `<div class="text-red-500 text-center p-4">${msg}</div>`;
+                if (loadingBarRef.current) {
+                  loadingBarRef.current.innerHTML = `<div class="text-${type === 'error' ? 'red' : 'yellow'}-500 text-center p-4">${msg}</div>`;
                 }
               },
-              disableLocalStorage: false,
-              enablePersistence: true,
+              disableLocalStorage: true,
+              enablePersistence: false,
               canvasId: "unity-canvas"
             };
 
