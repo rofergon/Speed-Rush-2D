@@ -27,7 +27,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.br$",
+      "source": "/Build/build-run\\.framework\\.js\\.br",
       "headers": [
         {
           "key": "Content-Type",
@@ -56,7 +56,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.data\\.br$",
+      "source": "/Build/build-run\\.data\\.br",
       "headers": [
         {
           "key": "Content-Type",
@@ -85,7 +85,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.wasm\\.br$",
+      "source": "/Build/build-run\\.wasm\\.br",
       "headers": [
         {
           "key": "Content-Type",
@@ -114,7 +114,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.js$",
+      "source": "/Build/build-run\\.loader\\.js",
       "headers": [
         {
           "key": "Content-Type",
