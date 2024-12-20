@@ -61,9 +61,14 @@ export function UnityGame() {
               failIfMajorPerformanceCaveat: false,
               showBanner: (msg: string, type: string) => {
                 console.warn('Unity Banner:', msg, type);
+                // Mostrar el error en la UI si es crítico
+                if (type === 'error' && loadingBarRef.current) {
+                  loadingBarRef.current.innerHTML = `<div class="text-red-500 text-center p-4">${msg}</div>`;
+                }
               },
-              // Desactivamos la sincronización automática del almacenamiento persistente
+              // Configuración de almacenamiento
               disableLocalStorage: true,
+              enablePersistence: false,
               // Añadimos el ID del canvas
               canvasId: "unity-canvas"
             };
