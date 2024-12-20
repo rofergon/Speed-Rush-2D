@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run copy-unity",
+    "build": "vite build",
+    "vercel-build": "chmod +x build.sh && ./build.sh",
     "copy-unity": "xcopy /E /I /Y public\\Build dist\\Build",
     "lint": "eslint .",
     "preview": "vite preview"

@@ -1,49 +1,54 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/Build/.*\\.br$",
-      "headers": {
-        "Content-Type": "application/octet-stream",
-        "Content-Encoding": "br"
-      },
-      "continue": true
-    },
-    {
-      "src": "/Build/.*\\.wasm\\.br$",
-      "headers": {
-        "Content-Type": "application/wasm",
-        "Content-Encoding": "br"
-      },
-      "continue": true
-    },
-    {
-      "src": "/Build/.*\\.js\\.br$",
-      "headers": {
-        "Content-Type": "application/javascript",
-        "Content-Encoding": "br"
-      },
-      "continue": true
-    },
-    {
-      "src": "/Build/.*\\.js$",
-      "headers": {
-        "Content-Type": "application/javascript"
-      },
-      "continue": true
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
   "headers": [
+    {
+      "source": "/Build/(.*)\\.br$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/octet-stream"
+        },
+        {
+          "key": "Content-Encoding",
+          "value": "br"
+        }
+      ]
+    },
+    {
+      "source": "/Build/(.*)\\.wasm\\.br$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/wasm"
+        },
+        {
+          "key": "Content-Encoding",
+          "value": "br"
+        }
+      ]
+    },
+    {
+      "source": "/Build/(.*)\\.js\\.br$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        },
+        {
+          "key": "Content-Encoding",
+          "value": "br"
+        }
+      ]
+    },
+    {
+      "source": "/Build/(.*)\\.js$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        }
+      ]
+    },
     {
       "source": "/Build/(.*)",
       "headers": [
