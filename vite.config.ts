@@ -26,7 +26,7 @@ export default defineConfig({
     },
   },
   // Configuración para servir archivos estáticos
-  publicDir: 'src/public',
+  publicDir: 'public',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -35,11 +35,20 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: undefined,
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name.endsWith('.br') || 
+              assetInfo.name.endsWith('.wasm') || 
+              assetInfo.name.endsWith('.js') || 
+              assetInfo.name.endsWith('.data')) {
+            return 'Build/[name]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        }
       },
     },
     // Asegurarse de que los archivos .br se copien sin procesar
     copyPublicDir: true,
   },
   // Incluir tipos de archivos adicionales
-  assetsInclude: ['**/*.br', '**/*.wasm', '**/*.unityweb'],
+  assetsInclude: ['**/*.br', '**/*.wasm', '**/*.unityweb', '**/*.data'],
 });
