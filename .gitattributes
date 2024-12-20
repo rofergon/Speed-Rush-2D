@@ -1,0 +1,3 @@
+*.br binary
+*.wasm binary
+public/Build/* binary 

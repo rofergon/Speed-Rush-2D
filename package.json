@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run copy-unity",
+    "copy-unity": "cp -r public/Build dist/",
     "lint": "eslint .",
     "preview": "vite preview"
   },
