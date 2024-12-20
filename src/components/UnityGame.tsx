@@ -18,11 +18,9 @@ export function UnityGame() {
       if (!canvasRef.current || !containerRef.current) return;
 
       try {
-        // Establecer dimensiones fijas para el canvas
         const container = containerRef.current;
         const canvas = canvasRef.current;
         
-        // Ajustamos el tamaño inicial
         const updateCanvasSize = () => {
           const parentWidth = container.clientWidth;
           const parentHeight = container.clientHeight;
@@ -33,43 +31,36 @@ export function UnityGame() {
           canvas.height = parentHeight;
         };
 
-        // Actualizamos el tamaño inicial
         updateCanvasSize();
-
-        // Añadimos listener para el resize
         window.addEventListener('resize', updateCanvasSize);
 
         const loaderScript = document.createElement('script');
-        loaderScript.src = '/Build/build-run.loader.js';
+        loaderScript.src = '/src/public/Build/build-run.loader.js';
         loaderScript.async = true;
 
         loaderScript.onload = async () => {
           try {
             const config = {
-              dataUrl: "/Build/build-run.data",
-              frameworkUrl: "/Build/build-run.framework.js",
-              codeUrl: "/Build/build-run.wasm",
-              streamingAssetsUrl: "StreamingAssets",
+              dataUrl: "/src/public/Build/build-run.data.br",
+              frameworkUrl: "/src/public/Build/build-run.framework.js.br",
+              codeUrl: "/src/public/Build/build-run.wasm.br",
+              streamingAssetsUrl: "/src/public/StreamingAssets",
               companyName: "Saritu.eth gaming",
               productName: "Rush racing",
               productVersion: "1.0",
-              // Configuraciones adicionales
-              matchWebGLToCanvasSize: false, // Desactivamos el ajuste automático
-              devicePixelRatio: 1, // Forzamos un ratio de píxeles fijo
+              matchWebGLToCanvasSize: false,
+              devicePixelRatio: 1,
               preserveDrawingBuffer: true,
               powerPreference: "high-performance",
               failIfMajorPerformanceCaveat: false,
               showBanner: (msg: string, type: string) => {
                 console.warn('Unity Banner:', msg, type);
-                // Mostrar el error en la UI si es crítico
                 if (type === 'error' && loadingBarRef.current) {
                   loadingBarRef.current.innerHTML = `<div class="text-red-500 text-center p-4">${msg}</div>`;
                 }
               },
-              // Configuración de almacenamiento
-              disableLocalStorage: true,
-              enablePersistence: false,
-              // Añadimos el ID del canvas
+              disableLocalStorage: false,
+              enablePersistence: true,
               canvasId: "unity-canvas"
             };
 
@@ -79,22 +70,24 @@ export function UnityGame() {
               }
             });
 
-            // Guardamos la instancia globalmente
             window.unityInstance = unityInstance;
 
             if (loadingBarRef.current) {
               loadingBarRef.current.style.display = 'none';
             }
 
-            // Cleanup
             return () => {
               if (window.unityInstance) {
                 window.unityInstance.Quit();
                 delete window.unityInstance;
               }
+              window.removeEventListener('resize', updateCanvasSize);
             };
           } catch (error) {
             console.error('Error initializing Unity:', error);
+            if (loadingBarRef.current) {
+              loadingBarRef.current.innerHTML = `<div class="text-red-500 text-center p-4">Error al cargar el juego: ${error}</div>`;
+            }
           }
         };
 
@@ -107,6 +100,9 @@ export function UnityGame() {
         };
       } catch (error) {
         console.error('Error loading Unity script:', error);
+        if (loadingBarRef.current) {
+          loadingBarRef.current.innerHTML = `<div class="text-red-500 text-center p-4">Error al cargar el script de Unity: ${error}</div>`;
+        }
       }
     };
 
