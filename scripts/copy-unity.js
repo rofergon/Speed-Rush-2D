@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, readdirSync, statSync } from 'fs';
+import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,52 +7,86 @@ const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
 
 function copyFolderRecursiveSync(source, target) {
-    // Crear el directorio de destino si no existe
-    if (!statSync(target).isDirectory()) {
-        mkdirSync(target, { recursive: true });
+    // Verificar si el directorio fuente existe
+    if (!existsSync(source)) {
+        console.error(`Source directory does not exist: ${source}`);
+        return false;
     }
 
-    // Leer todos los archivos del directorio fuente
-    const files = readdirSync(source);
+    // Crear el directorio de destino si no existe
+    try {
+        mkdirSync(target, { recursive: true });
+    } catch (err) {
+        console.error(`Error creating target directory ${target}:`, err);
+        return false;
+    }
 
-    // Copiar cada archivo
-    files.forEach(file => {
-        const sourcePath = join(source, file);
-        const targetPath = join(target, file);
+    try {
+        // Leer todos los archivos del directorio fuente
+        const files = readdirSync(source);
+        console.log(`Files in ${source}:`, files);
 
-        const stat = statSync(sourcePath);
+        // Copiar cada archivo
+        files.forEach(file => {
+            const sourcePath = join(source, file);
+            const targetPath = join(target, file);
 
-        if (stat.isFile()) {
             try {
-                copyFileSync(sourcePath, targetPath);
-                console.log(`Copied: ${sourcePath} -> ${targetPath}`);
+                const stat = statSync(sourcePath);
+
+                if (stat.isFile()) {
+                    copyFileSync(sourcePath, targetPath);
+                    console.log(`Copied file: ${sourcePath} -> ${targetPath}`);
+                } else if (stat.isDirectory()) {
+                    mkdirSync(targetPath, { recursive: true });
+                    copyFolderRecursiveSync(sourcePath, targetPath);
+                }
             } catch (err) {
-                console.error(`Error copying file ${sourcePath}:`, err);
+                console.error(`Error processing ${sourcePath}:`, err);
             }
-        } else if (stat.isDirectory()) {
-            try {
-                mkdirSync(targetPath, { recursive: true });
-                copyFolderRecursiveSync(sourcePath, targetPath);
-            } catch (err) {
-                console.error(`Error creating directory ${targetPath}:`, err);
-            }
-        }
-    });
+        });
+        return true;
+    } catch (err) {
+        console.error(`Error reading source directory ${source}:`, err);
+        return false;
+    }
 }
 
 try {
+    // Listar el contenido del directorio actual
+    console.log('Current working directory:', process.cwd());
+    console.log('Contents of current directory:', readdirSync('.'));
+    console.log('Contents of public directory:', existsSync('public') ? readdirSync('public') : 'public directory not found');
+
     const sourceDir = join(rootDir, 'public', 'Build');
     const targetDir = join(rootDir, 'dist', 'Build');
 
-    console.log('Current directory:', process.cwd());
     console.log('Source directory:', sourceDir);
     console.log('Target directory:', targetDir);
+    console.log('Source directory exists:', existsSync(sourceDir));
 
-    // Crear el directorio de destino
-    mkdirSync(targetDir, { recursive: true });
+    // Intentar diferentes rutas si la principal no funciona
+    const possibleSourceDirs = [
+        sourceDir,
+        join(process.cwd(), 'public', 'Build'),
+        join(process.cwd(), 'Build'),
+        join(process.cwd(), 'public', 'build'),
+        join(process.cwd(), 'build')
+    ];
 
-    // Copiar los archivos
-    copyFolderRecursiveSync(sourceDir, targetDir);
+    let success = false;
+    for (const dir of possibleSourceDirs) {
+        console.log(`Trying directory: ${dir}`);
+        if (existsSync(dir)) {
+            console.log(`Found Build directory at: ${dir}`);
+            success = copyFolderRecursiveSync(dir, targetDir);
+            if (success) break;
+        }
+    }
+
+    if (!success) {
+        throw new Error('Could not find or copy Unity build files');
+    }
 
     console.log('Unity files copied successfully!');
 } catch (error) {

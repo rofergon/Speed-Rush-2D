@@ -2,6 +2,8 @@
   "version": 2,
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
+  "public": true,
+  "cleanUrls": true,
   "headers": [
     {
       "source": "/Build/(.*)\\.br$",
