@@ -1,8 +1,24 @@
 import React from 'react';
 import { Gamepad2, Car, Trophy, Users, ChevronRight, Github } from 'lucide-react';
 import { Leaderboard } from './components/Leaderboard';
+import { UnityGame } from './components/UnityGame';
 
 function App() {
+  const scrollToGame = () => {
+    const gameSection = document.getElementById('game-section');
+    if (gameSection) {
+      const windowHeight = window.innerHeight;
+      const gameSectionHeight = gameSection.offsetHeight;
+      const offset = Math.max(0, (windowHeight - gameSectionHeight) / 2);
+      const elementPosition = gameSection.getBoundingClientRect().top + window.pageYOffset;
+      
+      window.scrollTo({
+        top: elementPosition - offset,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Hero Section */}
@@ -24,7 +40,10 @@ function App() {
             <p className="text-xl md:text-2xl mb-8 text-gray-300">
               Experience the thrill of high-speed racing in this action-packed 2D adventure
             </p>
-            <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105">
+            <button 
+              onClick={scrollToGame}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
+            >
               <Gamepad2 className="w-5 h-5" />
               <span>Play Now</span>
               <ChevronRight className="w-5 h-5" />
@@ -58,16 +77,21 @@ function App() {
       </section>
 
       {/* Game Section with Leaderboard */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Play Now</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 bg-gray-800 rounded-lg p-4 aspect-video">
-              <div className="w-full h-full flex items-center justify-center">
-                <p className="text-gray-400">Unity WebGL build will be embedded here</p>
-              </div>
+      <section id="game-section" className="py-12">
+        <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center mb-8">
+            <button 
+              onClick={scrollToGame}
+              className="hover:text-red-500 transition-colors"
+            >
+              Play Now
+            </button>
+          </h2>
+          <div className="flex flex-col gap-8">
+            <div className="w-full bg-gray-800 rounded-lg">
+              <UnityGame />
             </div>
-            <div className="lg:col-span-1">
+            <div className="max-w-2xl mx-auto w-full">
               <Leaderboard />
             </div>
           </div>
