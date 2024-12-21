@@ -27,7 +27,11 @@
       ]
     },
     {
+<<<<<<< Updated upstream
       "source": "/Build/.*\\.br$",
+=======
+      "source": "/Build/.*\\.framework\\.js\\.br",
+>>>>>>> Stashed changes
       "headers": [
         {
           "key": "Content-Encoding",
@@ -52,7 +56,11 @@
       ]
     },
     {
+<<<<<<< Updated upstream
       "source": "/Build/.*\\.js\\.br$",
+=======
+      "source": "/Build/.*\\.wasm\\.br",
+>>>>>>> Stashed changes
       "headers": [
         {
           "key": "Content-Type",
@@ -61,7 +69,11 @@
       ]
     },
     {
+<<<<<<< Updated upstream
       "source": "/Build/.*\\.wasm\\.br$",
+=======
+      "source": "/Build/.*\\.data\\.br",
+>>>>>>> Stashed changes
       "headers": [
         {
           "key": "Content-Type",
@@ -70,7 +82,11 @@
       ]
     },
     {
+<<<<<<< Updated upstream
       "source": "/Build/.*\\.data\\.br$",
+=======
+      "source": "/Build/.*\\.js",
+>>>>>>> Stashed changes
       "headers": [
         {
           "key": "Content-Type",

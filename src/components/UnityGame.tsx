@@ -37,6 +37,12 @@ export function UnityGame() {
         const loaderScript = document.createElement('script');
         loaderScript.src = '/Build/build-run.loader.js';
         loaderScript.async = true;
+        loaderScript.onerror = (error) => {
+          console.error('Error loading Unity loader script:', error);
+          if (loadingBarRef.current) {
+            loadingBarRef.current.innerHTML = `<div class="text-red-500 text-center p-4">Error al cargar el script de Unity</div>`;
+          }
+        };
 
         loaderScript.onload = async () => {
           try {
@@ -48,21 +54,55 @@ export function UnityGame() {
               companyName: "Saritu.eth gaming",
               productName: "Rush racing",
               productVersion: "1.0",
+<<<<<<< Updated upstream
               matchWebGLToCanvasSize: false,
+=======
+              matchWebGLToCanvasSize: true,
+>>>>>>> Stashed changes
               devicePixelRatio: 1,
               preserveDrawingBuffer: true,
               powerPreference: "high-performance",
               failIfMajorPerformanceCaveat: false,
               showBanner: (msg: string, type: string) => {
                 console.warn('Unity Banner:', msg, type);
+<<<<<<< Updated upstream
                 if (type === 'error' && loadingBarRef.current) {
                   loadingBarRef.current.innerHTML = `<div class="text-red-500 text-center p-4">${msg}</div>`;
+=======
+                if (loadingBarRef.current) {
+                  const color = type === 'error' ? 'red' : type === 'warning' ? 'yellow' : 'blue';
+                  loadingBarRef.current.innerHTML = `<div class="text-${color}-500 text-center p-4">${msg}</div>`;
+>>>>>>> Stashed changes
                 }
               },
               disableLocalStorage: false,
               enablePersistence: true,
               canvasId: "unity-canvas"
             };
+
+            const checkFileExists = async (url: string) => {
+              try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return response.ok;
+              } catch {
+                return false;
+              }
+            };
+
+            // Verificar si los archivos existen antes de intentar cargarlos
+            const files = [
+              config.dataUrl,
+              config.frameworkUrl,
+              config.codeUrl,
+              '/Build/build-run.loader.js'
+            ];
+
+            const fileChecks = await Promise.all(files.map(checkFileExists));
+            const missingFiles = files.filter((_, index) => !fileChecks[index]);
+
+            if (missingFiles.length > 0) {
+              throw new Error(`Archivos faltantes: ${missingFiles.join(', ')}`);
+            }
 
             const unityInstance = await window.createUnityInstance(canvas, config, (progress: number) => {
               if (progressBarRef.current) {
