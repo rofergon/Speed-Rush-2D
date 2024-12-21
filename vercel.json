@@ -5,118 +5,60 @@
   "public": true,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/Build/:file*", "destination": "/Build/:file*" },
+    { "source": "/Build/(.*)", "destination": "/Build/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "Cross-Origin-Opener-Policy",
-          "value": "same-origin"
-        },
-        {
-          "key": "Cross-Origin-Embedder-Policy",
-          "value": "require-corp"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        }
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" },
+        { "key": "Cross-Origin-Resource-Policy", "value": "cross-origin" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     },
     {
-<<<<<<< Updated upstream
-      "source": "/Build/.*\\.br$",
-=======
-      "source": "/Build/.*\\.framework\\.js\\.br",
->>>>>>> Stashed changes
+      "source": "/Build/(.*)\\.br",
       "headers": [
-        {
-          "key": "Content-Encoding",
-          "value": "br"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "*"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
+        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Content-Encoding", "value": "br" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "*" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
-<<<<<<< Updated upstream
-      "source": "/Build/.*\\.js\\.br$",
-=======
-      "source": "/Build/.*\\.wasm\\.br",
->>>>>>> Stashed changes
+      "source": "/Build/(.*)\\.wasm\\.br",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        }
+        { "key": "Content-Type", "value": "application/wasm" },
+        { "key": "Content-Encoding", "value": "br" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "*" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
-<<<<<<< Updated upstream
-      "source": "/Build/.*\\.wasm\\.br$",
-=======
-      "source": "/Build/.*\\.data\\.br",
->>>>>>> Stashed changes
+      "source": "/Build/(.*)\\.data\\.br",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/wasm"
-        }
+        { "key": "Content-Type", "value": "application/octet-stream" },
+        { "key": "Content-Encoding", "value": "br" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "*" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
-<<<<<<< Updated upstream
-      "source": "/Build/.*\\.data\\.br$",
-=======
-      "source": "/Build/.*\\.js",
->>>>>>> Stashed changes
+      "source": "/Build/(.*)\\.js",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/octet-stream"
-        }
-      ]
-    },
-    {
-      "source": "/Build/.*\\.js$",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "*"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
+        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "*" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
   ]
