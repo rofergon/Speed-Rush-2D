@@ -17,13 +17,29 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      stream: 'stream-browserify',
+      util: 'util',
     }
   },
   base: './',
   build: {
     outDir: 'dist',
     sourcemap: true,
-    chunkSizeWarningLimit: 1500
+    chunkSizeWarningLimit: 1500,
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
+  },
+  define: {
+    'process.env': {},
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
   }
 }) 
