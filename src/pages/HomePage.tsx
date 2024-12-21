@@ -1,6 +1,7 @@
 import React from 'react';
 import { Gamepad2, Car, Trophy, Users, ChevronRight, Github } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ConnectWallet } from '../components/ConnectWallet';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -30,14 +31,17 @@ export function HomePage() {
             <p className="text-xl md:text-2xl mb-8 text-gray-300">
               Experience the thrill of high-speed racing in this action-packed 2D adventure
             </p>
-            <button 
-              onClick={goToGame}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
-            >
-              <Gamepad2 className="w-5 h-5" />
-              <span>Jugar Ahora</span>
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            <div className="flex justify-center space-x-4">
+              <button 
+                onClick={goToGame}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
+              >
+                <Gamepad2 className="w-5 h-5" />
+                <span>Jugar Ahora</span>
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <ConnectWallet />
+            </div>
           </div>
         </div>
       </header>

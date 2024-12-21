@@ -1,54 +1,45 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react'
+    })
+  ],
   server: {
-    port: 5173,
+    port: 3000,
     host: true,
-    strictPort: true,
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Resource-Policy': 'cross-origin',
-      'Access-Control-Allow-Origin': '*'
-    }
-  },
-  preview: {
-    port: 5173,
-    host: true,
-    strictPort: true,
+    open: false
   },
   resolve: {
     alias: {
-      '@': path.resolve(process.cwd(), './src'),
-    },
+      '@': path.resolve(__dirname, './src'),
+      stream: 'stream-browserify',
+      util: 'util',
+    }
   },
-  // Configuración para servir archivos estáticos
-  publicDir: 'public',
+  base: './',
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
     sourcemap: true,
-    // Configuración para manejar archivos grandes
-    rollupOptions: {
-      output: {
-        manualChunks: undefined,
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name.endsWith('.br') || 
-              assetInfo.name.endsWith('.wasm') || 
-              assetInfo.name.endsWith('.js') || 
-              assetInfo.name.endsWith('.data')) {
-            return 'Build/[name]';
-          }
-          return 'assets/[name]-[hash][extname]';
-        }
-      },
-    },
-    // Asegurarse de que los archivos .br se copien sin procesar
-    copyPublicDir: true,
+    chunkSizeWarningLimit: 1500,
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
   },
-  // Incluir tipos de archivos adicionales
-  assetsInclude: ['**/*.br', '**/*.wasm', '**/*.unityweb', '**/*.data'],
-});
+  define: {
+    'process.env': {},
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
+  }
+}) 

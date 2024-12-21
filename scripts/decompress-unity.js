@@ -1,40 +1,48 @@
-import { createReadStream, createWriteStream } from 'fs';
-import { createBrotliDecompress } from 'zlib';
-import { join, dirname } from 'path';
+import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
-import { pipeline } from 'stream/promises';
+import { dirname, join } from 'path';
 
+const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const rootDir = join(__dirname, '..');
 
-async function decompressFile(inputPath, outputPath) {
-    try {
-        await pipeline(
-            createReadStream(inputPath),
-            createBrotliDecompress(),
-            createWriteStream(outputPath)
-        );
-        console.log(`Successfully decompressed ${inputPath} to ${outputPath}`);
-    } catch (error) {
-        console.error(`Error decompressing ${inputPath}:`, error);
-        throw error;
-    }
+const fs = require('fs');
+const zlib = require('zlib');
+
+const BUILD_DIR = join(process.cwd(), 'public', 'Build');
+
+// Lista de archivos a procesar
+const files = [
+  'build.framework.js.br',
+  'build.data.br',
+  'build.wasm.br'
+];
+
+// Función para descomprimir un archivo
+async function decompressFile(inputPath) {
+  const outputPath = inputPath.replace('.br', '');
+  
+  try {
+    const input = fs.readFileSync(inputPath);
+    const decompressed = zlib.brotliDecompressSync(input);
+    fs.writeFileSync(outputPath, decompressed);
+    console.log(`Descomprimido: ${outputPath}`);
+  } catch (error) {
+    console.error(`Error al descomprimir ${inputPath}:`, error);
+  }
 }
 
-async function main() {
-    const buildDir = join(rootDir, 'src', 'public', 'Build');
-    const files = [
-        ['build-run.data.br', 'build-run.data'],
-        ['build-run.framework.js.br', 'build-run.framework.js'],
-        ['build-run.wasm.br', 'build-run.wasm']
-    ];
-
-    for (const [brFile, outputFile] of files) {
-        const inputPath = join(buildDir, brFile);
-        const outputPath = join(buildDir, outputFile);
-        await decompressFile(inputPath, outputPath);
+// Procesar todos los archivos
+async function processFiles() {
+  for (const file of files) {
+    const filePath = join(BUILD_DIR, file);
+    if (fs.existsSync(filePath)) {
+      await decompressFile(filePath);
+    } else {
+      console.warn(`Archivo no encontrado: ${filePath}`);
     }
+  }
 }
 
-main().catch(console.error); 
+// Ejecutar el proceso
+processFiles().catch(console.error); 
