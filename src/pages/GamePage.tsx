@@ -4,12 +4,36 @@ import { Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import '../styles/unity.css';
 
+// Declarar el tipo para window
+declare global {
+  interface Window {
+    onLapTimesMinted: (lapTimesData: string) => void;
+  }
+}
+
 interface UnityInstance {
   SetFullscreen: (value: number) => void;
 }
 
 export function GamePage() {
   useEffect(() => {
+    // Función que recibe los datos de Unity
+    window.onLapTimesMinted = (lapTimesData: string) => {
+      // Separar los tiempos de vuelta
+      const laps = lapTimesData.split('|').filter(lap => lap !== '');
+      
+      // Mostrar en consola
+      console.log('¡Minteo exitoso!');
+      console.log('Tiempos de vuelta:');
+      laps.forEach(lap => console.log(lap));
+
+      // Aquí puedes agregar lógica adicional, como:
+      // - Mostrar una notificación al usuario
+      // - Actualizar el estado de la aplicación
+      // - Enviar los datos a un servidor
+      alert('¡Minteo exitoso!\n' + laps.join('\n'));
+    };
+
     const loadUnityGame = async () => {
       const buildUrl = "Build";
       const loaderUrl = buildUrl + "/build.loader.js";
