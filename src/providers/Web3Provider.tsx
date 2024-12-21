@@ -2,22 +2,48 @@
 
 import React, { useEffect } from 'react';
 import { WagmiProvider, createConfig, http, useAccount } from "wagmi";
-import { polygon } from "wagmi/chains";
+import { Chain } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 
-// Connection monitoring component
+// Definir la red de Lens Sepolia
+const lensSepolia: Chain = {
+  id: 37111,
+  name: 'Lens Network Sepolia Testnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'GRASS',
+    symbol: 'GRASS',
+  },
+  rpcUrls: {
+    default: { 
+      http: ['https://rpc.testnet.lens.dev']
+    },
+    public: {
+      http: ['https://rpc.testnet.lens.dev']
+    }
+  },
+  blockExplorers: {
+    default: {
+      name: 'Lens Block Explorer',
+      url: 'https://block-explorer.testnet.lens.dev'
+    }
+  },
+  testnet: true
+};
+
+// Componente para monitorear la conexión
 function ConnectionMonitor() {
   const { isConnected, address, chain } = useAccount();
 
   useEffect(() => {
-    console.log('Connection Status:', {
+    console.log('Estado de conexión:', {
       isConnected,
       address,
       chainId: chain?.id,
       chainName: chain?.name,
-      network: 'Lens Sepolia',
-      rpcUrl: import.meta.env.VITE_ALCHEMY_RPC_URL,
+      network: 'Lens Network Sepolia Testnet',
+      rpcUrl: 'https://rpc.testnet.lens.dev',
     });
   }, [isConnected, address, chain]);
 
@@ -26,15 +52,15 @@ function ConnectionMonitor() {
 
 const config = createConfig(
   getDefaultConfig({
-    chains: [polygon],
+    chains: [lensSepolia],
     transports: {
-      [polygon.id]: http(import.meta.env.VITE_ALCHEMY_RPC_URL),
+      [lensSepolia.id]: http('https://rpc.testnet.lens.dev'),
     },
 
-    walletConnectProjectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID!,
+    walletConnectProjectId: process.env.VITE_WALLETCONNECT_PROJECT_ID!,
 
     appName: "Speed Rush 2D",
-    appDescription: "An exciting 2D racing game with Lens integration",
+    appDescription: "Un emocionante juego de carreras 2D con integración Lens",
     appUrl: "https://speedrush2d.com", 
     appIcon: "/logo.png", 
   }),
