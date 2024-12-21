@@ -1,8 +1,15 @@
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const fs = require('fs');
-const path = require('path');
 const zlib = require('zlib');
 
-const BUILD_DIR = path.join(process.cwd(), 'public', 'Build');
+const BUILD_DIR = join(process.cwd(), 'public', 'Build');
 
 // Lista de archivos a procesar
 const files = [
@@ -28,7 +35,7 @@ async function decompressFile(inputPath) {
 // Procesar todos los archivos
 async function processFiles() {
   for (const file of files) {
-    const filePath = path.join(BUILD_DIR, file);
+    const filePath = join(BUILD_DIR, file);
     if (fs.existsSync(filePath)) {
       await decompressFile(filePath);
     } else {
