@@ -4,6 +4,10 @@ import { Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import '../styles/unity.css';
 
+interface UnityInstance {
+  SetFullscreen: (value: number) => void;
+}
+
 export function GamePage() {
   useEffect(() => {
     const loadUnityGame = async () => {
@@ -31,8 +35,8 @@ export function GamePage() {
             progressBar.style.width = 100 * progress + "%";
           }
         })
-          .then((unityInstance) => {
-            const loadingBar = document.querySelector("#unity-loading-bar");
+          .then((unityInstance: UnityInstance) => {
+            const loadingBar = document.querySelector("#unity-loading-bar") as HTMLElement;
             if (loadingBar) {
               loadingBar.style.display = "none";
             }
@@ -44,7 +48,7 @@ export function GamePage() {
               };
             }
           })
-          .catch((message) => {
+          .catch((message: string) => {
             alert(message);
           });
       };
