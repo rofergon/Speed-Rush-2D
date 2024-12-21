@@ -1,23 +1,40 @@
 "use client"
 
-import { WagmiProvider, createConfig, http } from "wagmi";
-import { mainnet } from "wagmi/chains";
+import React, { useEffect } from 'react';
+import { WagmiProvider, createConfig, http, useAccount } from "wagmi";
+import { polygon } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 
+// Connection monitoring component
+function ConnectionMonitor() {
+  const { isConnected, address, chain } = useAccount();
+
+  useEffect(() => {
+    console.log('Connection Status:', {
+      isConnected,
+      address,
+      chainId: chain?.id,
+      chainName: chain?.name,
+      network: 'Lens Sepolia',
+      rpcUrl: import.meta.env.VITE_ALCHEMY_RPC_URL,
+    });
+  }, [isConnected, address, chain]);
+
+  return null;
+}
+
 const config = createConfig(
   getDefaultConfig({
-    chains: [mainnet],
+    chains: [polygon],
     transports: {
-      [mainnet.id]: http(
-        `https://eth-mainnet.g.alchemy.com/v2/${process.env.VITE_ALCHEMY_ID}`,
-      ),
+      [polygon.id]: http(import.meta.env.VITE_ALCHEMY_RPC_URL),
     },
 
-    walletConnectProjectId: process.env.VITE_WALLETCONNECT_PROJECT_ID!,
+    walletConnectProjectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID!,
 
     appName: "Speed Rush 2D",
-    appDescription: "Un emocionante juego de carreras 2D",
+    appDescription: "An exciting 2D racing game with Lens integration",
     appUrl: "https://speedrush2d.com", 
     appIcon: "/logo.png", 
   }),
@@ -29,7 +46,10 @@ export const Web3Provider = ({ children }: { children: React.ReactNode }) => {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider>{children}</ConnectKitProvider>
+        <ConnectKitProvider>
+          <ConnectionMonitor />
+          {children}
+        </ConnectKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
