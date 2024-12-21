@@ -1,5 +1,4 @@
 import React from 'react';
-import { UnityGame } from '../components/UnityGame';
 import { Leaderboard } from '../components/Leaderboard';
 import { Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -17,8 +16,8 @@ export function GamePage() {
         </Link>
         
         <div className="flex flex-col gap-8">
-          <div className="w-full bg-gray-800 rounded-lg">
-            <UnityGame />
+          <div className="w-full bg-gray-800 rounded-lg p-8">
+            <h2 className="text-2xl font-bold text-center">Nuevo Juego</h2>
           </div>
           <div className="max-w-2xl mx-auto w-full">
             <Leaderboard />
