@@ -41,7 +41,7 @@ export function HomePage() {
                   className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
                 >
                   <Gamepad2 className="w-5 h-5" />
-                  <span>Jugar Ahora</span>
+                  <span>Play Now</span>
                   <ChevronRight className="w-5 h-5" />
                 </button>
               )}
@@ -53,22 +53,22 @@ export function HomePage() {
       {/* Features Section */}
       <section className="py-20 bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Características del Juego</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Game Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard 
               icon={<Car />}
-              title="Múltiples Autos"
-              description="Elige entre una variedad de vehículos únicos, cada uno con sus propias características"
+              title="Multiple Cars"
+              description="Choose from a variety of unique vehicles, each with their own characteristics"
             />
             <FeatureCard 
               icon={<Trophy />}
-              title="Carreras Competitivas"
-              description="Compite en carreras intensas y sube en las tablas de clasificación globales"
+              title="Competitive Racing"
+              description="Compete in intense races and climb the global leaderboards"
             />
             <FeatureCard 
               icon={<Users />}
-              title="Multijugador"
-              description="Compite contra amigos o desafía a jugadores de todo el mundo"
+              title="Multiplayer"
+              description="Compete against friends or challenge players from around the world"
             />
           </div>
         </div>
