@@ -6,7 +6,7 @@ import '../styles/unity.css';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
 
-// Declarar el tipo para window
+// Declare window type
 declare global {
   interface Window {
     onLapTimesMinted: (lapTimesData: string) => void;
@@ -22,20 +22,20 @@ export function GamePage() {
 
   useEffect(() => {
     if (!isConnected) {
-      return; // No cargar Unity si no está conectado
+      return; // Don't load Unity if not connected
     }
 
-    // Función que recibe los datos de Unity
+    // Function that receives data from Unity
     window.onLapTimesMinted = (lapTimesData: string) => {
-      // Separar los tiempos de vuelta
+      // Split lap times
       const laps = lapTimesData.split('|').filter(lap => lap !== '');
       
-      // Mostrar en consola
-      console.log('¡Minteo exitoso!');
-      console.log('Tiempos de vuelta:');
+      // Show in console
+      console.log('Successful minting!');
+      console.log('Lap times:');
       laps.forEach(lap => console.log(lap));
 
-      alert('¡Minteo exitoso!\n' + laps.join('\n'));
+      alert('Successful minting!\n' + laps.join('\n'));
     };
 
     const loadUnityGame = async () => {
@@ -90,7 +90,7 @@ export function GamePage() {
         document.body.removeChild(unityScript);
       }
     };
-  }, [isConnected]); // Agregar isConnected como dependencia
+  }, [isConnected]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -101,15 +101,15 @@ export function GamePage() {
             className="inline-flex items-center space-x-2 text-gray-300 hover:text-white"
           >
             <Home className="w-5 h-5" />
-            <span>Volver al Inicio</span>
+            <span>Back to Home</span>
           </Link>
           <ConnectKitButton />
         </div>
         
         {!isConnected ? (
           <div className="text-center py-20">
-            <h2 className="text-2xl font-bold mb-4">Conecta tu Wallet para Jugar</h2>
-            <p className="text-gray-400 mb-8">Necesitas conectar tu wallet para acceder al juego</p>
+            <h2 className="text-2xl font-bold mb-4">Connect Your Wallet to Play</h2>
+            <p className="text-gray-400 mb-8">You need to connect your wallet to access the game</p>
           </div>
         ) : (
           <div className="flex flex-col gap-8">
