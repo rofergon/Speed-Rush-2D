@@ -65,13 +65,15 @@ Speed Rush 2D is designed to work with the Lens Network, allowing players to:
 
 ## 📝 License
 
-GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
+MIT License - see the [LICENSE](LICENSE) file for details.
 
-This license requires that:
-- Source code must be made available when the software is distributed
-- Modified versions must also be licensed under AGPL-3.0
-- Changes must be documented
-- Network use counts as distribution
+This is a permissive license that allows for:
+- Commercial use
+- Modification
+- Distribution
+- Private use
+
+The only requirement is to include the original copyright notice and license disclaimer.
 
 ## 🤝 Contributing
 
