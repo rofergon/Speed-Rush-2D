@@ -15,14 +15,14 @@ export function CarNFTGenerator() {
     setError(null);
     try {
       const result = await generateCarNFT(
-        "Un carro de carreras futurista",
+        "A futuristic racing car",
         "cartoon"
       );
       setNftData(result);
       setIsDialogOpen(true);
     } catch (err) {
-      console.error('Error generando NFT:', err);
-      setError(err instanceof Error ? err.message : 'Error al generar el NFT');
+      console.error('Error generating NFT:', err);
+      setError(err instanceof Error ? err.message : 'Error generating NFT');
     } finally {
       setIsLoading(false);
     }
@@ -33,12 +33,12 @@ export function CarNFTGenerator() {
 
     const traits = nftData.metadata.traits;
     const traitsList = [
-      { key: 'speed', label: 'Velocidad', value: traits.speed },
-      { key: 'acceleration', label: 'Aceleración', value: traits.acceleration },
-      { key: 'handling', label: 'Manejo', value: traits.handling },
-      { key: 'drift_factor', label: 'Factor de Derrape', value: traits.drift_factor },
-      { key: 'turn_factor', label: 'Factor de Giro', value: traits.turn_factor },
-      { key: 'max_speed', label: 'Velocidad Máxima', value: traits.max_speed }
+      { key: 'speed', label: 'Speed', value: traits.speed },
+      { key: 'acceleration', label: 'Acceleration', value: traits.acceleration },
+      { key: 'handling', label: 'Handling', value: traits.handling },
+      { key: 'drift_factor', label: 'Drift Factor', value: traits.drift_factor },
+      { key: 'turn_factor', label: 'Turn Factor', value: traits.turn_factor },
+      { key: 'max_speed', label: 'Max Speed', value: traits.max_speed }
     ];
 
     return (
@@ -60,7 +60,7 @@ export function CarNFTGenerator() {
         disabled={isLoading}
         className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full transform transition hover:scale-105 disabled:opacity-50"
       >
-        {isLoading ? 'Generando...' : 'Generar NFT de Carro'}
+        {isLoading ? 'Generating...' : 'Generate Car NFT'}
       </button>
 
       {error && (
@@ -74,7 +74,7 @@ export function CarNFTGenerator() {
           <div className="bg-gray-800 rounded-lg p-6 max-w-lg w-full">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-white">
-                Carro NFT Generado
+                Generated Car NFT
               </h3>
               <button
                 onClick={() => setIsDialogOpen(false)}
@@ -87,13 +87,13 @@ export function CarNFTGenerator() {
             <div className="mb-4">
               <img
                 src={nftData.imageUrl}
-                alt="Carro NFT"
+                alt="Car NFT"
                 className="w-full rounded-lg"
               />
             </div>
 
             <div className="text-white">
-              <h4 className="font-bold mb-2">Atributos del Carro</h4>
+              <h4 className="font-bold mb-2">Car Attributes</h4>
               {renderAttributes()}
             </div>
 
@@ -101,7 +101,7 @@ export function CarNFTGenerator() {
               onClick={() => setIsDialogOpen(false)}
               className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
             >
-              Cerrar
+              Close
             </button>
           </div>
         </div>
