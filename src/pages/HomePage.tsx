@@ -3,6 +3,7 @@ import { Gamepad2, Car, Trophy, Users, ChevronRight, Github } from 'lucide-react
 import { useNavigate } from 'react-router-dom';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
+import { CarNFTGenerator } from '../components/CarNFTGenerator';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -33,17 +34,20 @@ export function HomePage() {
             <p className="text-xl md:text-2xl mb-8 text-gray-300">
               Experience the thrill of high-speed racing in this action-packed 2D adventure
             </p>
-            <div className="flex justify-center space-x-4 flex-wrap gap-4">
+            <div className="flex flex-col items-center space-y-4">
               <ConnectKitButton />
               {isConnected && (
-                <button 
-                  onClick={goToGame}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
-                >
-                  <Gamepad2 className="w-5 h-5" />
-                  <span>Play Now</span>
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+                <>
+                  <CarNFTGenerator />
+                  <button 
+                    onClick={goToGame}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
+                  >
+                    <Gamepad2 className="w-5 h-5" />
+                    <span>Play Now</span>
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
               )}
             </div>
           </div>
