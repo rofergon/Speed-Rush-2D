@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { generateCarNFT, CarMetadata } from '../services/carApi';
+import { carStorage } from '../services/carStorage';
+import { useAccount } from 'wagmi';
+import { useNavigate } from 'react-router-dom';
 
 export function CarNFTGenerator() {
   const [isLoading, setIsLoading] = useState(false);
@@ -9,8 +12,15 @@ export function CarNFTGenerator() {
   } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { address } = useAccount();
+  const navigate = useNavigate();
 
   const handleGenerateNFT = async () => {
+    if (!address) {
+      setError('Wallet not connected');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
@@ -18,6 +28,11 @@ export function CarNFTGenerator() {
         "A futuristic racing car",
         'cartoon'
       );
+
+      // Save to local storage
+      const savedCar = carStorage.saveCar(address, result.imageUrl, result.metadata);
+      console.log('Car saved:', savedCar);
+
       setNftData(result);
       setIsDialogOpen(true);
     } catch (err) {
@@ -26,6 +41,11 @@ export function CarNFTGenerator() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleViewInGarage = () => {
+    setIsDialogOpen(false);
+    navigate('/profile');
   };
 
   const renderAttributes = () => {
@@ -97,12 +117,20 @@ export function CarNFTGenerator() {
               {renderAttributes()}
             </div>
 
-            <button
-              onClick={() => setIsDialogOpen(false)}
-              className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
-            >
-              Close
-            </button>
+            <div className="mt-6 flex space-x-4">
+              <button
+                onClick={handleViewInGarage}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+              >
+                View in Garage
+              </button>
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
