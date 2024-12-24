@@ -10,6 +10,7 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const { isConnected, address } = useAccount();
   const [cars, setCars] = useState<StoredCar[]>([]);
+  const [selectedCar, setSelectedCar] = useState<StoredCar | null>(null);
 
   useEffect(() => {
     if (address) {
@@ -20,11 +21,45 @@ export function ProfilePage() {
     }
   }, [address]);
 
+  const handleSellCar = (carId: string) => {
+    if (!address) return;
+    
+    if (window.confirm('Are you sure you want to sell this car? This action cannot be undone.')) {
+      carStorage.deleteCar(address, carId);
+      setCars(cars.filter(c => c.id !== carId));
+    }
+  };
+
+  const renderCarAttributes = (traits: StoredCar['metadata']['traits']) => {
+    const traitsList = [
+      { key: 'speed', label: 'Speed', value: traits.speed },
+      { key: 'acceleration', label: 'Acceleration', value: traits.acceleration },
+      { key: 'handling', label: 'Handling', value: traits.handling },
+      { key: 'drift_factor', label: 'Drift Factor', value: traits.drift_factor },
+      { key: 'turn_factor', label: 'Turn Factor', value: traits.turn_factor },
+      { key: 'max_speed', label: 'Max Speed', value: traits.max_speed }
+    ];
+
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {traitsList.map(({ key, label, value }) => (
+          <div key={key} className="bg-gray-700 p-3 rounded-lg">
+            <div className="text-sm text-gray-400">{label}</div>
+            <div className="font-bold">{value.toFixed(1)}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderCarCard = (car: StoredCar) => {
     const traits = car.metadata.traits;
     return (
       <div key={car.id} className="bg-gray-800 rounded-lg overflow-hidden flex flex-col">
-        <div className="relative pt-[100%] w-full bg-gray-900">
+        <div 
+          className="relative pt-[100%] w-full bg-gray-900 cursor-pointer"
+          onClick={() => setSelectedCar(car)}
+        >
           <img 
             src={car.imageUrl} 
             alt={`Car NFT ${car.id}`}
@@ -40,12 +75,6 @@ export function ProfilePage() {
             <div className="text-white font-medium">{traits.acceleration.toFixed(1)}</div>
             <div className="text-gray-400">Handling</div>
             <div className="text-white font-medium">{traits.handling.toFixed(1)}</div>
-            <div className="text-gray-400">Drift Factor</div>
-            <div className="text-white font-medium">{traits.drift_factor.toFixed(1)}</div>
-            <div className="text-gray-400">Turn Factor</div>
-            <div className="text-white font-medium">{traits.turn_factor.toFixed(1)}</div>
-            <div className="text-gray-400">Max Speed</div>
-            <div className="text-white font-medium">{traits.max_speed.toFixed(1)}</div>
           </div>
           <div className="mt-auto flex space-x-2">
             <button 
@@ -55,15 +84,10 @@ export function ProfilePage() {
               Race
             </button>
             <button 
-              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
-              onClick={() => {
-                if (address && window.confirm('Are you sure you want to remove this car?')) {
-                  carStorage.deleteCar(address, car.id);
-                  setCars(cars.filter(c => c.id !== car.id));
-                }
-              }}
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"
+              onClick={() => handleSellCar(car.id)}
             >
-              Remove
+              Sell
             </button>
           </div>
         </div>
@@ -134,6 +158,53 @@ export function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* Car Details Dialog */}
+        {selectedCar && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 rounded-lg p-6 max-w-lg w-full">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-white">
+                  Car #{selectedCar.id}
+                </h3>
+                <button
+                  onClick={() => setSelectedCar(null)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <img
+                  src={selectedCar.imageUrl}
+                  alt={`Car NFT ${selectedCar.id}`}
+                  className="w-full rounded-lg"
+                />
+              </div>
+
+              <div className="text-white">
+                <h4 className="font-bold mb-2">Car Attributes</h4>
+                {renderCarAttributes(selectedCar.metadata.traits)}
+              </div>
+
+              <div className="mt-6 flex space-x-4">
+                <button
+                  onClick={() => navigate('/game')}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+                >
+                  Race
+                </button>
+                <button
+                  onClick={() => setSelectedCar(null)}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
