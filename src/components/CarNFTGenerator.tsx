@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
-import { generateCarNFT, CarMetadata } from '../services/carApi';
+import { generateCarNFT, CarMetadata, CarStyle } from '../services/carApi';
+
+const STYLE_OPTIONS: { value: CarStyle; label: string }[] = [
+  { value: 'cartoon', label: 'Cartoon' },
+  { value: 'realistic', label: 'Realistic' },
+  { value: 'anime', label: 'Anime' }
+];
 
 export function CarNFTGenerator() {
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState<CarStyle>('cartoon');
   const [nftData, setNftData] = useState<{
     imageUrl: string;
     metadata: CarMetadata;
@@ -16,7 +23,7 @@ export function CarNFTGenerator() {
     try {
       const result = await generateCarNFT(
         "A futuristic racing car",
-        "cartoon"
+        selectedStyle
       );
       setNftData(result);
       setIsDialogOpen(true);
@@ -46,7 +53,7 @@ export function CarNFTGenerator() {
         {traitsList.map(({ key, label, value }) => (
           <div key={key} className="bg-gray-700 p-3 rounded-lg">
             <div className="text-sm text-gray-400">{label}</div>
-            <div className="font-bold">{value}</div>
+            <div className="font-bold">{value.toFixed(2)}</div>
           </div>
         ))}
       </div>
@@ -54,7 +61,26 @@ export function CarNFTGenerator() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md mx-auto space-y-4">
+      <div className="flex flex-col space-y-2">
+        <label htmlFor="style-select" className="text-sm font-medium text-gray-300">
+          Select Style
+        </label>
+        <select
+          id="style-select"
+          value={selectedStyle}
+          onChange={(e) => setSelectedStyle(e.target.value as CarStyle)}
+          className="bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+          disabled={isLoading}
+        >
+          {STYLE_OPTIONS.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <button
         onClick={handleGenerateNFT}
         disabled={isLoading}

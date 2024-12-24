@@ -1,3 +1,5 @@
+export type CarStyle = 'cartoon' | 'realistic' | 'anime';
+
 interface CarResponse {
   image: {
     data: string;
@@ -27,12 +29,14 @@ export interface CarMetadata {
   };
 }
 
-export const generateCarNFT = async (prompt: string, style: string): Promise<{
+const API_URL = "https://speed-rush-2d-backend-production.up.railway.app";
+
+export const generateCarNFT = async (prompt: string, style: CarStyle): Promise<{
   imageUrl: string;
   metadata: CarMetadata;
 }> => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/cars/generate', {
+    const response = await fetch(`${API_URL}/api/cars/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -42,12 +46,12 @@ export const generateCarNFT = async (prompt: string, style: string): Promise<{
 
     if (!response.ok) {
       const errorData = await response.text();
-      throw new Error(errorData || 'Error al generar el carro');
+      throw new Error(errorData || `Error: ${response.status}`);
     }
 
     const data: CarResponse = await response.json();
     
-    // Crear URL para la imagen base64
+    // Create URL from base64 image data
     const imageUrl = `data:${data.image.content_type};base64,${data.image.data}`;
 
     return {
@@ -55,7 +59,7 @@ export const generateCarNFT = async (prompt: string, style: string): Promise<{
       metadata: data.metadata
     };
   } catch (error) {
-    console.error('Error en generateCarNFT:', error);
-    throw error instanceof Error ? error : new Error('Error desconocido al generar el carro');
+    console.error('Error in generateCarNFT:', error);
+    throw error instanceof Error ? error : new Error('Unknown error generating car');
   }
 }; 
