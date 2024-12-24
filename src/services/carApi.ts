@@ -1,3 +1,5 @@
+import { resizeImage } from '../utils/imageUtils';
+
 export type CarStyle = 'cartoon' | 'realistic' | 'anime';
 
 interface CarResponse {
@@ -51,11 +53,12 @@ export const generateCarNFT = async (prompt: string, style: CarStyle): Promise<{
 
     const data: CarResponse = await response.json();
     
-    // Create URL from base64 image data
+    // Create optimized image URL from base64
     const imageUrl = `data:${data.image.content_type};base64,${data.image.data}`;
+    const optimizedImageUrl = await resizeImage(imageUrl);
 
     return {
-      imageUrl,
+      imageUrl: optimizedImageUrl,
       metadata: data.metadata
     };
   } catch (error) {
