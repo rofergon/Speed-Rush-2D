@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gamepad2, Car, Trophy, Users, ChevronRight, Github } from 'lucide-react';
+import { Gamepad2, Car, Trophy, Users, ChevronRight, Github, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
@@ -11,6 +11,10 @@ export function HomePage() {
 
   const goToGame = () => {
     navigate('/game');
+  };
+
+  const goToGarage = () => {
+    navigate('/profile');
   };
 
   return (
@@ -39,14 +43,23 @@ export function HomePage() {
               {isConnected && (
                 <>
                   <CarNFTGenerator />
-                  <button 
-                    onClick={goToGame}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
-                  >
-                    <Gamepad2 className="w-5 h-5" />
-                    <span>Play Now</span>
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
+                  <div className="flex space-x-4">
+                    <button 
+                      onClick={goToGame}
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
+                    >
+                      <Gamepad2 className="w-5 h-5" />
+                      <span>Play Now</span>
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={goToGarage}
+                      className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
+                    >
+                      <Wrench className="w-5 h-5" />
+                      <span>My Garage</span>
+                    </button>
+                  </div>
                 </>
               )}
             </div>
