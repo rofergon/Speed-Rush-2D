@@ -1,0 +1,68 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_carNFTAddress",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "getLeaderboard",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "carId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "bestTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastRaceTime",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct RaceLeaderboard.LeaderboardEntry[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "carId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "raceTime",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateRaceTime",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+} 
