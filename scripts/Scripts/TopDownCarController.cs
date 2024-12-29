@@ -32,6 +32,7 @@ public class TopDownCarController : MonoBehaviour
     Rigidbody2D carRigidbody2D;
     Collider2D carCollider;
     CarSFXHandler carSfxHandler;
+    CarSkinLoader carSkinLoader;
 
     //Awake is called when the script instance is being loaded.
     void Awake()
@@ -39,6 +40,17 @@ public class TopDownCarController : MonoBehaviour
         carRigidbody2D = GetComponent<Rigidbody2D>();
         carCollider = GetComponentInChildren<Collider2D>();
         carSfxHandler = GetComponent<CarSFXHandler>();
+
+        // Buscar el CarSkinLoader existente o crear uno nuevo
+        carSkinLoader = GetComponent<CarSkinLoader>();
+        if (carSkinLoader == null)
+        {
+            carSkinLoader = gameObject.AddComponent<CarSkinLoader>();
+        }
+        
+        // Asignar las referencias
+        carSkinLoader.carSpriteRenderer = carSpriteRenderer;
+        carSkinLoader.carShadowRenderer = carShadowRenderer;
     }
 
     void Start()

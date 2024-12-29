@@ -1,28 +1,42 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Leaderboard } from '../components/Leaderboard';
 import { Home } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../styles/unity.css';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
+import { web3Service } from '../services/web3Service';
+import { activeCarService } from '../services/activeCarService';
 
 // Declare window type
 declare global {
   interface Window {
     onLapTimesMinted: (lapTimesData: string) => void;
+    RequestCarNFTImage: () => void;
   }
 }
 
 interface UnityInstance {
   SetFullscreen: (value: number) => void;
+  SendMessage: (objectName: string, methodName: string, value: string) => void;
 }
 
 export function GamePage() {
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
+  const [unityInstance, setUnityInstance] = useState<UnityInstance | null>(null);
+  const [unityLoaded, setUnityLoaded] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isConnected) {
       return; // Don't load Unity if not connected
+    }
+
+    // Verificar si hay un carro seleccionado
+    const activeCar = activeCarService.getActiveCar();
+    if (!activeCar) {
+      navigate('/profile');
+      return;
     }
 
     // Function that receives data from Unity
@@ -38,13 +52,53 @@ export function GamePage() {
       alert('Successful minting!\n' + laps.join('\n'));
     };
 
+    // Función para enviar la imagen del NFT a Unity
+    const loadCarImage = async (instance: UnityInstance) => {
+      try {
+        const activeCar = activeCarService.getActiveCar();
+        if (activeCar) {
+          console.log("[Frontend] Enviando imagen del carro a Unity:", activeCar.carImageURI);
+          try {
+            const response = await fetch(activeCar.carImageURI);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const blob = await response.blob();
+            const reader = new FileReader();
+            
+            reader.onloadend = () => {
+              const base64data = (reader.result as string).split(',')[1];
+              console.log("[Frontend] Imagen cargada, enviando a Unity, longitud:", base64data.length);
+              instance.SendMessage('Car', 'OnImageReceived', base64data);
+            };
+            
+            reader.readAsDataURL(blob);
+          } catch (error) {
+            console.error('[Frontend] Error al cargar la imagen:', error);
+          }
+        } else {
+          console.error("[Frontend] No hay carro activo");
+        }
+      } catch (error) {
+        console.error('[Frontend] Error en loadCarImage:', error);
+      }
+    };
+
+    window.RequestCarNFTImage = async () => {
+      if (!unityInstance) {
+        console.error("[Frontend] La instancia de Unity no está disponible");
+        return;
+      }
+      await loadCarImage(unityInstance);
+    };
+
     const loadUnityGame = async () => {
       const buildUrl = "Build";
-      const loaderUrl = buildUrl + "/build.loader.js";
+      const loaderUrl = buildUrl + "/Build.loader.js";
       const config = {
-        dataUrl: buildUrl + "/build.data.br",
-        frameworkUrl: buildUrl + "/build.framework.js.br",
-        codeUrl: buildUrl + "/build.wasm.br",
+        dataUrl: buildUrl + "/Build.data.br",
+        frameworkUrl: buildUrl + "/Build.framework.js.br",
+        codeUrl: buildUrl + "/Build.wasm.br",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "Saritu.eth gaming",
         productName: "Rush racing",
@@ -62,7 +116,11 @@ export function GamePage() {
             progressBar.style.width = 100 * progress + "%";
           }
         })
-          .then((unityInstance: UnityInstance) => {
+          .then((instance: UnityInstance) => {
+            console.log("[Frontend] Unity inicializado correctamente");
+            setUnityInstance(instance);
+            setUnityLoaded(true);
+
             const loadingBar = document.querySelector("#unity-loading-bar") as HTMLElement;
             if (loadingBar) {
               loadingBar.style.display = "none";
@@ -71,14 +129,20 @@ export function GamePage() {
             if (fullscreenButton) {
               // @ts-ignore
               fullscreenButton.onclick = () => {
-                unityInstance.SetFullscreen(1);
+                instance.SetFullscreen(1);
               };
             }
+
+            // Cargar la imagen después de que Unity esté completamente inicializado
+            setTimeout(async () => {
+              await loadCarImage(instance);
+            }, 2000);
           })
           .catch((message: string) => {
-            alert(message);
+            console.error("[Frontend] Error inicializando Unity:", message);
           });
       };
+
       document.body.appendChild(script);
     };
 
@@ -90,7 +154,14 @@ export function GamePage() {
         document.body.removeChild(unityScript);
       }
     };
-  }, [isConnected]);
+  }, [isConnected, address, navigate]);
+
+  // Efecto para cargar la imagen cuando Unity esté listo
+  useEffect(() => {
+    if (unityLoaded && unityInstance) {
+      window.RequestCarNFTImage();
+    }
+  }, [unityLoaded]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -108,8 +179,8 @@ export function GamePage() {
         
         {!isConnected ? (
           <div className="text-center py-20">
-            <h2 className="text-2xl font-bold mb-4">Connect Your Wallet to Play</h2>
-            <p className="text-gray-400 mb-8">You need to connect your wallet to access the game</p>
+            <h2 className="text-2xl font-bold mb-4">Conecta tu Wallet para Jugar</h2>
+            <p className="text-gray-400 mb-8">Necesitas conectar tu wallet para acceder al juego</p>
           </div>
         ) : (
           <div className="flex flex-col gap-8">
