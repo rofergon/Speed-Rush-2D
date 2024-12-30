@@ -231,15 +231,15 @@ export function CarGallery() {
 
             <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Velocidad</span>
+                <span className="text-gray-400 block mb-2">Speed</span>
                 <Speedometer value={Number(activeCar.combinedStats?.speed) || 0} size={120} />
               </div>
               <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Aceleración</span>
+                <span className="text-gray-400 block mb-2">Acceleration</span>
                 <Speedometer value={Number(activeCar.combinedStats?.acceleration) || 0} size={120} />
               </div>
               <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Manejo</span>
+                <span className="text-gray-400 block mb-2">Handling</span>
                 <Speedometer value={Number(activeCar.combinedStats?.handling) || 0} size={120} />
               </div>
               <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
@@ -247,11 +247,11 @@ export function CarGallery() {
                 <Speedometer value={Number(activeCar.combinedStats?.driftFactor) || 0} size={120} />
               </div>
               <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Giro</span>
+                <span className="text-gray-400 block mb-2">Turn</span>
                 <Speedometer value={Number(activeCar.combinedStats?.turnFactor) || 0} size={120} />
               </div>
               <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Vel. Máx</span>
+                <span className="text-gray-400 block mb-2">Max Speed</span>
                 <Speedometer value={Number(activeCar.combinedStats?.maxSpeed) || 0} size={120} />
               </div>
             </div>
@@ -277,11 +277,11 @@ export function CarGallery() {
 
             <div className="grid grid-cols-2 gap-2 text-sm mb-4">
               <div className="bg-gray-700 p-2 rounded">
-                <span className="text-gray-400 block">Velocidad</span>
+                <span className="text-gray-400 block">Speed</span>
                 <span className="text-xl font-bold">{renderStats(car.combinedStats?.speed)}</span>
               </div>
               <div className="bg-gray-700 p-2 rounded">
-                <span className="text-gray-400 block">Aceleración</span>
+                <span className="text-gray-400 block">Acceleration</span>
                 <span className="text-xl font-bold">{renderStats(car.combinedStats?.acceleration)}</span>
               </div>
             </div>
