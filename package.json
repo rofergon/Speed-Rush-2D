@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
+    "@lens-network/sdk": "^0.0.0-canary-20241203140504",
     "@tanstack/react-query": "^5.62.8",
+    "@web3-storage/w3up-client": "^17.1.1",
     "connectkit": "^1.8.2",
-    "ethers": "^5.7.2",
+    "ethers": "^6.13.4",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -23,7 +25,8 @@
     "stream-browserify": "^3.0.0",
     "util": "^0.12.5",
     "viem": "^2.21.56",
-    "wagmi": "^2.14.4"
+    "wagmi": "^2.14.4",
+    "zksync-ethers": "^6.15.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
