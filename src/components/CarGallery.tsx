@@ -230,29 +230,41 @@ export function CarGallery() {
             </div>
 
             <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Speed</span>
-                <Speedometer value={Number(activeCar.combinedStats?.speed) || 0} size={120} />
+              <div className="bg-gray-700 p-6 rounded-lg flex flex-col items-center justify-center">
+                <span className="text-gray-400 block mb-4">Speed</span>
+                <div className="flex items-center justify-center">
+                  <Speedometer value={Number(activeCar.combinedStats?.speed) || 0} size={120} />
+                </div>
               </div>
-              <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Acceleration</span>
-                <Speedometer value={Number(activeCar.combinedStats?.acceleration) || 0} size={120} />
+              <div className="bg-gray-700 p-6 rounded-lg flex flex-col items-center justify-center">
+                <span className="text-gray-400 block mb-4">Acceleration</span>
+                <div className="flex items-center justify-center">
+                  <Speedometer value={Number(activeCar.combinedStats?.acceleration) || 0} size={120} />
+                </div>
               </div>
-              <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Handling</span>
-                <Speedometer value={Number(activeCar.combinedStats?.handling) || 0} size={120} />
+              <div className="bg-gray-700 p-6 rounded-lg flex flex-col items-center justify-center">
+                <span className="text-gray-400 block mb-4">Handling</span>
+                <div className="flex items-center justify-center">
+                  <Speedometer value={Number(activeCar.combinedStats?.handling) || 0} size={120} />
+                </div>
               </div>
-              <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Drift</span>
-                <Speedometer value={Number(activeCar.combinedStats?.driftFactor) || 0} size={120} />
+              <div className="bg-gray-700 p-6 rounded-lg flex flex-col items-center justify-center">
+                <span className="text-gray-400 block mb-4">Drift</span>
+                <div className="flex items-center justify-center">
+                  <Speedometer value={Number(activeCar.combinedStats?.driftFactor) || 0} size={120} />
+                </div>
               </div>
-              <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Turn</span>
-                <Speedometer value={Number(activeCar.combinedStats?.turnFactor) || 0} size={120} />
+              <div className="bg-gray-700 p-6 rounded-lg flex flex-col items-center justify-center">
+                <span className="text-gray-400 block mb-4">Turn</span>
+                <div className="flex items-center justify-center">
+                  <Speedometer value={Number(activeCar.combinedStats?.turnFactor) || 0} size={120} />
+                </div>
               </div>
-              <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
-                <span className="text-gray-400 block mb-2">Max Speed</span>
-                <Speedometer value={Number(activeCar.combinedStats?.maxSpeed) || 0} size={120} />
+              <div className="bg-gray-700 p-6 rounded-lg flex flex-col items-center justify-center">
+                <span className="text-gray-400 block mb-4">Max Speed</span>
+                <div className="flex items-center justify-center">
+                  <Speedometer value={Number(activeCar.combinedStats?.maxSpeed) || 0} size={120} />
+                </div>
               </div>
             </div>
           </div>
@@ -264,7 +276,7 @@ export function CarGallery() {
           <div key={car.id} className="bg-gray-800 rounded-lg p-4">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-lg font-bold text-white">Car #{car.id}</h3>
-              <Speedometer value={calculateAverageStats(car)} size={40} />
+              <Speedometer value={calculateAverageStats(car)} size={50} />
             </div>
 
             <div className="relative mb-4">
