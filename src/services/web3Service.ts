@@ -284,7 +284,7 @@ export async function getUserCars(address: string): Promise<any[]> {
       signer
     );
 
-    // Usar la nueva función getCarsByOwner
+    // Obtener los IDs de los carros
     const carIds = await carNFTContract.getCarsByOwner(address);
     console.log('Car IDs for address:', address, carIds);
 
@@ -292,34 +292,40 @@ export async function getUserCars(address: string): Promise<any[]> {
     const carIdsArray = Array.from(carIds, (id: any) => BigInt(id.toString()));
     console.log('Converted car IDs:', carIdsArray);
 
-    // Obtener los metadatos completos de cada carro
-    const carPromises = carIdsArray.map(async (carId: bigint) => {
-      const metadata = await carNFTContract.getFullCarMetadata(carId);
-      // Obtener las partes del carro
-      const parts = await getCarParts(carId.toString());
-      
-      // Mapear los datos del carro de manera similar a getCarMetadata.js
-      const mappedCar = {
-        id: carId.toString(),
-        carImageURI: metadata.carImageURI,
-        owner: metadata.owner,
-        condition: Number(metadata.condition),
-        combinedStats: {
-          speed: Number(metadata.combinedStats.speed),
-          acceleration: Number(metadata.combinedStats.acceleration),
-          handling: Number(metadata.combinedStats.handling),
-          driftFactor: Number(metadata.combinedStats.driftFactor),
-          turnFactor: Number(metadata.combinedStats.turnFactor),
-          maxSpeed: Number(metadata.combinedStats.maxSpeed)
-        },
-        parts: parts
-      };
+    // Cargar los carros uno por uno para evitar que un error en uno afecte a los demás
+    const cars = [];
+    for (const carId of carIdsArray) {
+      try {
+        // Intentar obtener los metadatos del carro
+        const metadata = await carNFTContract.getFullCarMetadata(carId);
+        const parts = await getCarParts(carId.toString());
+        
+        // Mapear los datos del carro
+        const mappedCar = {
+          id: carId.toString(),
+          carImageURI: metadata.carImageURI,
+          owner: metadata.owner,
+          condition: Number(metadata.condition),
+          combinedStats: {
+            speed: Number(metadata.combinedStats.speed) || 0,
+            acceleration: Number(metadata.combinedStats.acceleration) || 0,
+            handling: Number(metadata.combinedStats.handling) || 0,
+            driftFactor: Number(metadata.combinedStats.driftFactor) || 0,
+            turnFactor: Number(metadata.combinedStats.turnFactor) || 0,
+            maxSpeed: Number(metadata.combinedStats.maxSpeed) || 0
+          },
+          parts: parts
+        };
 
-      console.log('Mapped car data:', mappedCar);
-      return mappedCar;
-    });
+        console.log('Mapped car data:', mappedCar);
+        cars.push(mappedCar);
+      } catch (error) {
+        console.error(`Error loading car ${carId}:`, error);
+        // Continuamos con el siguiente carro si hay un error
+        continue;
+      }
+    }
 
-    const cars = await Promise.all(carPromises);
     console.log('Cars loaded:', cars);
     return cars;
   } catch (error) {

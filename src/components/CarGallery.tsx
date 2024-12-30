@@ -29,11 +29,70 @@ export function CarGallery() {
   const loadCars = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      // Intentamos cargar los carros uno por uno para evitar que un error en uno afecte a los demás
       const userCars = await web3Service.getUserCars(address!);
-      setCars(userCars);
+      console.log('Carros obtenidos:', userCars);
+      
+      // Filtramos los carros que tienen datos válidos
+      const validCars = userCars.filter(car => {
+        try {
+          // Verificamos que el carro tenga la estructura básica necesaria
+          if (!car || !car.id || !car.carImageURI || !car.parts) {
+            console.log(`Carro inválido (estructura incompleta):`, car);
+            return false;
+          }
+
+          // Verificamos que las estadísticas sean válidas
+          if (car.combinedStats) {
+            const stats = [
+              car.combinedStats.speed,
+              car.combinedStats.acceleration,
+              car.combinedStats.handling,
+              car.combinedStats.driftFactor,
+              car.combinedStats.turnFactor,
+              car.combinedStats.maxSpeed
+            ];
+
+            // Si alguna estadística es undefined o NaN, la consideramos como 0
+            const hasInvalidStats = stats.some(stat => 
+              stat === undefined || 
+              stat === null || 
+              (typeof stat === 'number' && isNaN(stat))
+            );
+
+            if (hasInvalidStats) {
+              console.log(`Carro ${car.id} tiene estadísticas inválidas:`, car.combinedStats);
+              // Aún así lo incluimos, porque manejaremos las estadísticas inválidas en renderStats
+              return true;
+            }
+          }
+
+          return true;
+        } catch (error) {
+          console.error(`Error procesando carro ${car?.id}:`, error);
+          return false;
+        }
+      });
+
+      console.log('Carros válidos:', validCars);
+
+      if (validCars.length === 0) {
+        setError('No se encontraron carros válidos en tu colección.');
+        return;
+      }
+
+      setCars(validCars);
+      
+      // Si hay un carro activo que fue filtrado, seleccionar el primer carro válido
+      const storedActiveCar = activeCarService.getActiveCar();
+      if (storedActiveCar && !validCars.find(car => car.id === storedActiveCar.id)) {
+        handleSelectCar(validCars[0]);
+      }
     } catch (err) {
       console.error('Error loading cars:', err);
-      setError('Error cargando los carros');
+      setError('Error cargando los carros. Por favor, intenta de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -83,8 +142,27 @@ export function CarGallery() {
   };
 
   const calculateAverageStats = (car: Car) => {
-    const { speed, acceleration, handling } = car.combinedStats;
-    return Math.round((speed + acceleration + handling) / 3);
+    try {
+      const stats = car.combinedStats || {};
+      const validStats = [
+        stats.speed,
+        stats.acceleration,
+        stats.handling
+      ].filter(stat => typeof stat === 'number' && !isNaN(stat));
+      
+      if (validStats.length === 0) return 0;
+      
+      const total = validStats.reduce((sum, stat) => sum + stat, 0);
+      return Math.round(total / validStats.length);
+    } catch (error) {
+      console.error('Error calculando estadísticas:', error);
+      return 0;
+    }
+  };
+
+  const renderStats = (stats: any) => {
+    if (!stats) return '0';
+    return typeof stats === 'number' ? stats.toString() : '0';
   };
 
   if (!address) {
@@ -105,8 +183,14 @@ export function CarGallery() {
 
   if (error) {
     return (
-      <div className="text-center text-red-500 py-8">
-        {error}
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-4">{error}</div>
+        <button
+          onClick={() => loadCars()}
+          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg"
+        >
+          Intentar de nuevo
+        </button>
       </div>
     );
   }
@@ -149,24 +233,24 @@ export function CarGallery() {
             <div className="flex-1 pl-6">
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <span className="text-gray-400">Velocidad:</span> {activeCar.combinedStats.speed}
+                  <span className="text-gray-400">Velocidad:</span> {renderStats(activeCar.combinedStats?.speed)}
                 </div>
                 <div>
-                  <span className="text-gray-400">Aceleración:</span> {activeCar.combinedStats.acceleration}
+                  <span className="text-gray-400">Aceleración:</span> {renderStats(activeCar.combinedStats?.acceleration)}
                 </div>
                 <div>
-                  <span className="text-gray-400">Manejo:</span> {activeCar.combinedStats.handling}
+                  <span className="text-gray-400">Manejo:</span> {renderStats(activeCar.combinedStats?.handling)}
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4 mt-4">
                 <div>
-                  <span className="text-gray-400">Drift:</span> {activeCar.combinedStats.driftFactor}
+                  <span className="text-gray-400">Drift:</span> {renderStats(activeCar.combinedStats?.driftFactor)}
                 </div>
                 <div>
-                  <span className="text-gray-400">Giro:</span> {activeCar.combinedStats.turnFactor}
+                  <span className="text-gray-400">Giro:</span> {renderStats(activeCar.combinedStats?.turnFactor)}
                 </div>
                 <div>
-                  <span className="text-gray-400">Vel. Máx:</span> {activeCar.combinedStats.maxSpeed}
+                  <span className="text-gray-400">Vel. Máx:</span> {renderStats(activeCar.combinedStats?.maxSpeed)}
                 </div>
               </div>
             </div>
@@ -184,22 +268,22 @@ export function CarGallery() {
 
             <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
               <div>
-                <span className="text-gray-400">Velocidad:</span> {car.combinedStats.speed}
+                <span className="text-gray-400">Velocidad:</span> {renderStats(car.combinedStats?.speed)}
               </div>
               <div>
-                <span className="text-gray-400">Aceleración:</span> {car.combinedStats.acceleration}
+                <span className="text-gray-400">Aceleración:</span> {renderStats(car.combinedStats?.acceleration)}
               </div>
               <div>
-                <span className="text-gray-400">Manejo:</span> {car.combinedStats.handling}
+                <span className="text-gray-400">Manejo:</span> {renderStats(car.combinedStats?.handling)}
               </div>
               <div>
-                <span className="text-gray-400">Drift:</span> {car.combinedStats.driftFactor}
+                <span className="text-gray-400">Drift:</span> {renderStats(car.combinedStats?.driftFactor)}
               </div>
               <div>
-                <span className="text-gray-400">Giro:</span> {car.combinedStats.turnFactor}
+                <span className="text-gray-400">Giro:</span> {renderStats(car.combinedStats?.turnFactor)}
               </div>
               <div>
-                <span className="text-gray-400">Vel. Máx:</span> {car.combinedStats.maxSpeed}
+                <span className="text-gray-400">Vel. Máx:</span> {renderStats(car.combinedStats?.maxSpeed)}
               </div>
             </div>
 
