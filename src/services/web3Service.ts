@@ -408,5 +408,43 @@ export async function getCarParts(carId: string): Promise<any[]> {
 export const web3Service = {
   mintCar,
   getUserCars,
-  getCarParts
+  getCarParts,
+  mintCarNFT: async (address: string, imageUrl: string, metadata: any): Promise<string> => {
+    try {
+      const mintPrice = '0.01'; // ETH
+      return await web3Service.mintCar(
+        address,
+        {
+          carImageURI: imageUrl,
+          parts: [
+            {
+              stat1: metadata.traits.speed,
+              stat2: metadata.traits.max_speed,
+              stat3: metadata.traits.acceleration,
+              imageURI: imageUrl,
+              partType: 0 // Motor
+            },
+            {
+              stat1: metadata.traits.handling,
+              stat2: metadata.traits.drift_factor,
+              stat3: metadata.traits.turn_factor,
+              imageURI: imageUrl,
+              partType: 1 // Transmisión
+            },
+            {
+              stat1: metadata.traits.handling,
+              stat2: metadata.traits.drift_factor,
+              stat3: metadata.traits.turn_factor,
+              imageURI: imageUrl,
+              partType: 2 // Ruedas
+            }
+          ]
+        },
+        mintPrice
+      );
+    } catch (error) {
+      console.error('Error in mintCarNFT:', error);
+      throw error;
+    }
+  }
 }; 
