@@ -5,6 +5,7 @@ import { PartDetailsDialog } from './PartDetailsDialog';
 import { activeCarService } from '../services/activeCarService';
 import { Car, Part } from '../types/car';
 import { useNavigate } from 'react-router-dom';
+import { Speedometer } from './Speedometer';
 
 export function CarGallery() {
   const { address } = useAccount();
@@ -81,6 +82,11 @@ export function CarGallery() {
     );
   };
 
+  const calculateAverageStats = (car: Car) => {
+    const { speed, acceleration, handling } = car.combinedStats;
+    return Math.round((speed + acceleration + handling) / 3);
+  };
+
   if (!address) {
     return (
       <div className="text-center text-gray-400 py-8">
@@ -117,13 +123,18 @@ export function CarGallery() {
     <div>
       {activeCar && (
         <div className="mb-8 p-6 bg-gray-800 rounded-lg">
-          <h3 className="text-xl font-bold text-white mb-4">Carro Seleccionado</h3>
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-xl font-bold text-white">Carro Seleccionado</h3>
+            <Speedometer value={calculateAverageStats(activeCar)} size={60} />
+          </div>
           <div className="flex items-center space-x-6">
-            <img
-              src={activeCar.carImageURI}
-              alt={`Car ${activeCar.id}`}
-              className="w-48 h-32 object-contain rounded-lg"
-            />
+            <div className="relative w-48">
+              <img
+                src={activeCar.carImageURI}
+                alt={`Car ${activeCar.id}`}
+                className="w-full h-32 object-contain rounded-lg"
+              />
+            </div>
             <div className="flex-1">
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -150,15 +161,21 @@ export function CarGallery() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {cars.map((car) => (
           <div key={car.id} className="bg-gray-800 rounded-lg p-6">
-            <img
-              src={car.carImageURI}
-              alt={`Car ${car.id}`}
-              className="w-full h-48 object-contain rounded-lg mb-4"
-            />
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-white">Car #{car.id}</h3>
+              <Speedometer value={calculateAverageStats(car)} size={60} />
+            </div>
+
+            <div className="relative mb-4">
+              <img
+                src={car.carImageURI}
+                alt={`Car ${car.id}`}
+                className="w-full h-48 object-contain rounded-lg"
+              />
+            </div>
             
-            <div className="text-white mb-4">
+            <div className="text-white">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">Car #{car.id}</h3>
                 <button
                   onClick={() => handleSelectCar(car)}
                   className={`px-4 py-2 rounded-lg font-bold ${
@@ -191,16 +208,17 @@ export function CarGallery() {
                 </div>
               </div>
             </div>
-
             {renderParts(car)}
           </div>
         ))}
+      </div>
 
+      {selectedPart && (
         <PartDetailsDialog
           part={selectedPart}
           onClose={() => setSelectedPart(null)}
         />
-      </div>
+      )}
     </div>
   );
 } 
