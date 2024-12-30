@@ -62,7 +62,7 @@ public class CarSkinLoader : MonoBehaviour
             Sprite carSprite = Sprite.Create(
                 texture, 
                 new Rect(0, 0, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f),
+                new Vector2(0.3f, 0.3f),
                 100f // Pixels per unit
             );
 
@@ -70,7 +70,10 @@ public class CarSkinLoader : MonoBehaviour
             if (carSpriteRenderer != null)
             {
                 carSpriteRenderer.sprite = carSprite;
-                Debug.Log("[CarSkinLoader] Sprite assigned to car renderer");
+                // Rotar -90 grados y escalar al 40%
+                carSpriteRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
+                carSpriteRenderer.transform.localScale = Vector3.one * 0.3f;
+                Debug.Log("[CarSkinLoader] Sprite assigned to car renderer with rotation and scale adjustments");
             }
             else
             {
@@ -81,7 +84,10 @@ public class CarSkinLoader : MonoBehaviour
             if (carShadowRenderer != null)
             {
                 carShadowRenderer.sprite = carSprite;
-                Debug.Log("[CarSkinLoader] Sprite assigned to shadow renderer");
+                // Aplicar la misma rotación y escala a la sombra
+                carShadowRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
+                carShadowRenderer.transform.localScale = Vector3.one * 0.3f;
+                Debug.Log("[CarSkinLoader] Sprite assigned to shadow renderer with rotation and scale adjustments");
             }
             else
             {

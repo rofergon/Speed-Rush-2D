@@ -94,11 +94,11 @@ export function GamePage() {
 
     const loadUnityGame = async () => {
       const buildUrl = "Build";
-      const loaderUrl = buildUrl + "/Build.loader.js";
+      const loaderUrl = buildUrl + "/build.loader.js";
       const config = {
-        dataUrl: buildUrl + "/Build.data.br",
-        frameworkUrl: buildUrl + "/Build.framework.js.br",
-        codeUrl: buildUrl + "/Build.wasm.br",
+        dataUrl: buildUrl + "/build.data.br",
+        frameworkUrl: buildUrl + "/build.framework.js.br",
+        codeUrl: buildUrl + "/build.wasm.br",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "Saritu.eth gaming",
         productName: "Rush racing",
