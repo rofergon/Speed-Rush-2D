@@ -12,7 +12,7 @@ A high-speed 2D racing game built for the Lens Network ecosystem using Thirdweb,
 - **Competitive Racing**: Compete in intense races and climb the global leaderboards
 - **Asynchronous Multiplayer**: Challenge other players' records and compete against their best times in asynchronous gameplay
 - **Lens Network Integration**: Connect with the Lens social graph and share your achievements
-- **Web3 Features**: Powered by Thirdweb for seamless blockchain integration
+- **Family Features**: Powered by Thirdweb for seamless blockchain integration
 
 ## 🚀 Technologies
 
