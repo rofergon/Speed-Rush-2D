@@ -32,8 +32,13 @@ export function HomePage() {
         
         <div className="relative max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-600">
-              Speed Rush 2D
+            <h1 className="text-6xl md:text-8xl font-extrabold mb-8 relative">
+              <span className="absolute inset-0 text-white [text-shadow:_6px_6px_0_rgb(255_255_255),_-6px_-6px_0_rgb(255_255_255),_6px_-6px_0_rgb(255_255_255),_-6px_6px_0_rgb(255_255_255),_6px_0_0_rgb(255_255_255),_-6px_0_0_rgb(255_255_255),_0_6px_0_rgb(255_255_255),_0_-6px_0_rgb(255_255_255),_4px_4px_0_rgb(255_255_255),_-4px_-4px_0_rgb(255_255_255),_4px_-4px_0_rgb(255_255_255),_-4px_4px_0_rgb(255_255_255)]">
+                Speed Rush 2D
+              </span>
+              <span className="relative bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 animate-pulse drop-shadow-[0_0_25px_rgba(234,179,8,0.3)]">
+                Speed Rush 2D
+              </span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-gray-300">
               Experience the thrill of high-speed racing in this action-packed 2D adventure
