@@ -7,7 +7,7 @@ export const Header: React.FC = () => {
   const { address } = useAccount();
 
   return (
-    <div className="w-full max-w-[98%] mx-auto bg-gray-800 rounded-lg p-4 mb-6">
+    <div className="w-full bg-gray-800 rounded-lg p-4 lg:p-6 mb-8">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center space-x-4">
           <div className="bg-red-600 p-3 rounded-full">

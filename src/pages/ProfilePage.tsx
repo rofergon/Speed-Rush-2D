@@ -14,7 +14,7 @@ export function ProfilePage() {
       <>
         <Background />
         <div className="min-h-screen text-white relative z-10">
-          <div className="container mx-auto px-6 py-6">
+          <div className="w-full px-4 py-8">
             <div className="text-center py-20">
               <h2 className="text-2xl font-bold mb-4">Conecta tu Wallet para Ver tu Perfil</h2>
               <ConnectKitButton />
@@ -29,12 +29,12 @@ export function ProfilePage() {
     <>
       <Background />
       <div className="min-h-screen text-white relative z-10">
-        <div className="container mx-auto px-6 py-6">
+        <div className="w-full px-6 py-8">
           {/* Header con Wallet */}
           <Header />
 
           {/* Cars Grid */}
-          <div className="w-full max-w-[98%] mx-auto">
+          <div className="w-full">
             <CarGallery />
           </div>
         </div>
