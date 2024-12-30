@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
 import { CarNFTGenerator } from '../components/CarNFTGenerator';
+import { Background } from '../components/Background';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -21,15 +22,7 @@ export function HomePage() {
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Hero Section */}
       <header className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&q=80"
-            alt="Racing background"
-            className="w-full h-full object-cover opacity-40"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 to-gray-900"></div>
-        </div>
-        
+        <Background />
         <div className="relative max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-600">

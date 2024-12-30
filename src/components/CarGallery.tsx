@@ -204,10 +204,10 @@ export function CarGallery() {
   }
 
   return (
-    <div>
+    <div className="w-full">
       {activeCar && (
-        <div className="mb-8 p-6 bg-gray-800 rounded-lg">
-          <div className="flex justify-between items-start mb-6">
+        <div className="mb-6 bg-gray-800 rounded-lg p-5">
+          <div className="flex justify-between items-start mb-5">
             <h3 className="text-xl font-bold text-white">Carro Seleccionado</h3>
             <div className="flex items-center gap-4">
               <button
@@ -220,71 +220,51 @@ export function CarGallery() {
             </div>
           </div>
 
-          <div className="flex">
-            <div className="w-1/4">
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="w-full lg:w-2/5 xl:w-1/3">
               <img
                 src={activeCar.carImageURI}
                 alt={`Car ${activeCar.id}`}
-                className="w-full object-contain rounded-lg"
-                style={{ height: '200px' }}
+                className="w-full h-auto object-contain rounded-lg"
               />
             </div>
 
-            <div className="flex-1 pl-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <span className="text-gray-400">Velocidad:</span> {renderStats(activeCar.combinedStats?.speed)}
-                </div>
-                <div>
-                  <span className="text-gray-400">Aceleración:</span> {renderStats(activeCar.combinedStats?.acceleration)}
-                </div>
-                <div>
-                  <span className="text-gray-400">Manejo:</span> {renderStats(activeCar.combinedStats?.handling)}
-                </div>
+            <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <span className="text-gray-400 block">Velocidad:</span>
+                <span className="text-2xl font-bold">{renderStats(activeCar.combinedStats?.speed)}</span>
               </div>
-              <div className="grid grid-cols-3 gap-4 mt-4">
-                <div>
-                  <span className="text-gray-400">Drift:</span> {renderStats(activeCar.combinedStats?.driftFactor)}
-                </div>
-                <div>
-                  <span className="text-gray-400">Giro:</span> {renderStats(activeCar.combinedStats?.turnFactor)}
-                </div>
-                <div>
-                  <span className="text-gray-400">Vel. Máx:</span> {renderStats(activeCar.combinedStats?.maxSpeed)}
-                </div>
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <span className="text-gray-400 block">Aceleración:</span>
+                <span className="text-2xl font-bold">{renderStats(activeCar.combinedStats?.acceleration)}</span>
+              </div>
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <span className="text-gray-400 block">Manejo:</span>
+                <span className="text-2xl font-bold">{renderStats(activeCar.combinedStats?.handling)}</span>
+              </div>
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <span className="text-gray-400 block">Drift:</span>
+                <span className="text-2xl font-bold">{renderStats(activeCar.combinedStats?.driftFactor)}</span>
+              </div>
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <span className="text-gray-400 block">Giro:</span>
+                <span className="text-2xl font-bold">{renderStats(activeCar.combinedStats?.turnFactor)}</span>
+              </div>
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <span className="text-gray-400 block">Vel. Máx:</span>
+                <span className="text-2xl font-bold">{renderStats(activeCar.combinedStats?.maxSpeed)}</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
         {cars.map((car) => (
-          <div key={car.id} className="bg-gray-800 rounded-lg p-6">
+          <div key={car.id} className="bg-gray-800 rounded-lg p-4">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold text-white">Car #{car.id}</h3>
-              <Speedometer value={calculateAverageStats(car)} size={60} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-              <div>
-                <span className="text-gray-400">Velocidad:</span> {renderStats(car.combinedStats?.speed)}
-              </div>
-              <div>
-                <span className="text-gray-400">Aceleración:</span> {renderStats(car.combinedStats?.acceleration)}
-              </div>
-              <div>
-                <span className="text-gray-400">Manejo:</span> {renderStats(car.combinedStats?.handling)}
-              </div>
-              <div>
-                <span className="text-gray-400">Drift:</span> {renderStats(car.combinedStats?.driftFactor)}
-              </div>
-              <div>
-                <span className="text-gray-400">Giro:</span> {renderStats(car.combinedStats?.turnFactor)}
-              </div>
-              <div>
-                <span className="text-gray-400">Vel. Máx:</span> {renderStats(car.combinedStats?.maxSpeed)}
-              </div>
+              <h3 className="text-lg font-bold text-white">Car #{car.id}</h3>
+              <Speedometer value={calculateAverageStats(car)} size={40} />
             </div>
 
             <div className="relative mb-4">
@@ -294,21 +274,29 @@ export function CarGallery() {
                 className="w-full h-48 object-contain rounded-lg"
               />
             </div>
-            
-            <div className="text-white">
-              <div className="flex justify-between items-center mb-4">
-                <button
-                  onClick={() => handleSelectCar(car)}
-                  className={`px-4 py-2 rounded-lg font-bold ${
-                    activeCar?.id === car.id
-                      ? 'bg-red-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  {activeCar?.id === car.id ? 'Seleccionado' : 'Seleccionar'}
-                </button>
+
+            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <span className="text-gray-400 block">Velocidad</span>
+                <span className="text-xl font-bold">{renderStats(car.combinedStats?.speed)}</span>
+              </div>
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <span className="text-gray-400 block">Aceleración</span>
+                <span className="text-xl font-bold">{renderStats(car.combinedStats?.acceleration)}</span>
               </div>
             </div>
+
+            <button
+              onClick={() => handleSelectCar(car)}
+              className={`w-full px-4 py-2 rounded-lg font-bold ${
+                activeCar?.id === car.id
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {activeCar?.id === car.id ? 'Seleccionado' : 'Seleccionar'}
+            </button>
+
             {renderParts(car)}
           </div>
         ))}
