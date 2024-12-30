@@ -24,10 +24,10 @@ export function Speedometer({ value, size = 100 }: SpeedometerProps) {
     return '#10B981'; // verde
   };
 
-  // Calcular dimensiones
-  const strokeWidth = size * 0.080;
-  const radius = (size - strokeWidth * 2.5) * 0.42; // Ajustado para considerar el grosor del trazo
-  const center = size / 2.7;
+  // Calcular dimensiones relativas al tamaño
+  const strokeWidth = size * 0.08;
+  const radius = size * 0.4; // Ajustado para ser relativo al tamaño
+  const center = size * 0.5; // El centro siempre será la mitad del tamaño
 
   // Función para convertir grados a coordenadas
   const polarToCartesian = (angle: number) => {
@@ -54,7 +54,7 @@ export function Speedometer({ value, size = 100 }: SpeedometerProps) {
   const progressEndAngle = startAngle + ((endAngle - startAngle) * (percentageValue / 100));
 
   return (
-    <div className="relative bg-gray-900 rounded-full p-2 shadow-lg" style={{ width: size, height: size }}>
+    <div className="relative bg-gray-900 rounded-full" style={{ width: size, height: size }}>
       <svg width={size} height={size}>
         {/* Arco de fondo */}
         <path
@@ -73,20 +73,31 @@ export function Speedometer({ value, size = 100 }: SpeedometerProps) {
           strokeWidth={strokeWidth}
           strokeLinecap="round"
         />
-      </svg>
-      
-      {/* Valor numérico */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div 
-          className="text-white font-bold"
-          style={{ fontSize: size * 0.20 }}
+
+        {/* Valor numérico centrado */}
+        <text
+          x={center}
+          y={center}
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="fill-white font-bold"
+          style={{ fontSize: size * 0.25 }}
         >
           {Math.round(normalizedValue)}
-        </div>
-        <div className="text-gray-400" style={{ fontSize: size * 0.03 }}>
+        </text>
+        
+        {/* Etiqueta de Performance */}
+        <text
+          x={center}
+          y={center + (size * 0.15)}
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="fill-gray-400"
+          style={{ fontSize: size * 0.08 }}
+        >
           Performance
-        </div>
-      </div>
+        </text>
+      </svg>
     </div>
   );
 }
