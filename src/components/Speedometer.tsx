@@ -25,7 +25,7 @@ export function Speedometer({ value, size = 100 }: SpeedometerProps) {
   };
 
   // Calcular dimensiones relativas al tamaño
-  const strokeWidth = size * 0.08;
+  const strokeWidth = size * 0.09;
   const radius = size * 0.4; // Ajustado para ser relativo al tamaño
   const center = size * 0.5; // El centro siempre será la mitad del tamaño
 
