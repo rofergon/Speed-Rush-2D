@@ -23,11 +23,11 @@ export function HomePage() {
       <header className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img 
-            src="https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&q=80"
+            src="/backgroun1.png"
             alt="Racing background"
-            className="w-full h-full object-cover opacity-40"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 to-gray-900"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-900/60 to-gray-900/90"></div>
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8">

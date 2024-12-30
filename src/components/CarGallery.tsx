@@ -116,7 +116,7 @@ export function CarGallery() {
   const renderParts = (car: Car) => {
     return (
       <div className="mt-4">
-        <h4 className="text-lg font-semibold text-white mb-2">Partes:</h4>
+        <h4 className="text-lg font-semibold text-white mb-2">Parts:</h4>
         <div className="grid grid-cols-3 gap-4">
           {car.parts.map((part) => (
             <div
@@ -130,9 +130,9 @@ export function CarGallery() {
                 className="w-full h-24 object-contain rounded-lg mb-2"
               />
               <div className="text-sm text-center text-gray-300">
-                {part.partType === 0 ? "Motor" :
-                 part.partType === 1 ? "Transmisión" :
-                 part.partType === 2 ? "Ruedas" : "Desconocido"}
+                {part.partType === 0 ? "Engine" :
+                 part.partType === 1 ? "Transmission" :
+                 part.partType === 2 ? "Core" : "Unknown"}
               </div>
             </div>
           ))}
@@ -189,7 +189,7 @@ export function CarGallery() {
           onClick={() => loadCars()}
           className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg"
         >
-          Intentar de nuevo
+          Try Again
         </button>
       </div>
     );
@@ -198,7 +198,7 @@ export function CarGallery() {
   if (cars.length === 0) {
     return (
       <div className="text-center text-gray-400 py-8">
-        No tienes carros todavía
+        You don't have any cars yet
       </div>
     );
   }
@@ -208,13 +208,13 @@ export function CarGallery() {
       {activeCar && (
         <div className="mb-8 bg-gray-800 rounded-lg p-6">
           <div className="flex justify-between items-start mb-6">
-            <h3 className="text-xl font-bold text-white">Carro Seleccionado</h3>
+            <h3 className="text-xl font-bold text-white">Selected Car</h3>
             <div className="flex items-center gap-4">
               <button
                 onClick={handlePlayWithCar}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg"
               >
-                Jugar
+                Play
               </button>
               <Speedometer value={calculateAverageStats(activeCar)} size={60} />
             </div>
@@ -294,7 +294,7 @@ export function CarGallery() {
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
-              {activeCar?.id === car.id ? 'Seleccionado' : 'Seleccionar'}
+              {activeCar?.id === car.id ? 'Selected' : 'Select'}
             </button>
 
             {renderParts(car)}

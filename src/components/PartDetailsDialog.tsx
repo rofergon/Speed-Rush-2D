@@ -25,13 +25,13 @@ export function PartDetailsDialog({ part, onClose }: PartDetailsDialogProps) {
   const getPartTypeName = (type: number) => {
     switch (type) {
       case 0:
-        return "Motor";
+        return "Engine";
       case 1:
-        return "Transmisión";
+        return "Transmission";
       case 2:
-        return "Ruedas";
+        return "Core";
       default:
-        return "Desconocido";
+        return "Unknown";
     }
   };
 
@@ -80,25 +80,25 @@ export function PartDetailsDialog({ part, onClose }: PartDetailsDialogProps) {
         <div className="grid grid-cols-2 gap-4">
           {part.stats.speed !== undefined && (
             <div>
-              <span className="text-gray-400">Velocidad:</span>{" "}
+              <span className="text-gray-400">Speed:</span>{" "}
               <span className="text-white">{part.stats.speed}</span>
             </div>
           )}
           {part.stats.maxSpeed !== undefined && (
             <div>
-              <span className="text-gray-400">Vel. Máx:</span>{" "}
+              <span className="text-gray-400">Max Speed:</span>{" "}
               <span className="text-white">{part.stats.maxSpeed}</span>
             </div>
           )}
           {part.stats.acceleration !== undefined && (
             <div>
-              <span className="text-gray-400">Aceleración:</span>{" "}
+              <span className="text-gray-400">Acceleration:</span>{" "}
               <span className="text-white">{part.stats.acceleration}</span>
             </div>
           )}
           {part.stats.handling !== undefined && (
             <div>
-              <span className="text-gray-400">Manejo:</span>{" "}
+              <span className="text-gray-400">Handling:</span>{" "}
               <span className="text-white">{part.stats.handling}</span>
             </div>
           )}
@@ -110,7 +110,7 @@ export function PartDetailsDialog({ part, onClose }: PartDetailsDialogProps) {
           )}
           {part.stats.turnFactor !== undefined && (
             <div>
-              <span className="text-gray-400">Giro:</span>{" "}
+              <span className="text-gray-400">Turn:</span>{" "}
               <span className="text-white">{part.stats.turnFactor}</span>
             </div>
           )}
