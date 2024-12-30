@@ -3,7 +3,7 @@ import { Gamepad2, Car, Trophy, Users, ChevronRight, Github, Wrench } from 'luci
 import { useNavigate } from 'react-router-dom';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
-import { CarNFTGenerator } from '../components/CarNFTGenerator';
+import { GameInfo } from '../components/GameInfo';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export function HomePage() {
               <ConnectKitButton />
               {isConnected && (
                 <>
-                  <CarNFTGenerator />
+                  <GameInfo />
                   <div className="flex space-x-4">
                     <button 
                       onClick={goToGame}
@@ -79,18 +79,18 @@ export function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard 
               icon={<Car />}
-              title="Multiple Cars"
-              description="Choose from a variety of unique vehicles, each with their own characteristics"
+              title="NFT Cars"
+              description="Each car is a unique NFT with special characteristics and customizable parts"
             />
             <FeatureCard 
               icon={<Trophy />}
-              title="Competitive Racing"
-              description="Compete in intense races and climb the global leaderboards"
+              title="Blockchain Competition"
+              description="Your race results are recorded on the Lens network as NFTs with seasonal rewards"
             />
             <FeatureCard 
               icon={<Users />}
-              title="Multiplayer"
-              description="Compete against friends or challenge players from around the world"
+              title="Repair System"
+              description="Keep your car in optimal condition at the workshop using GRASS tokens"
             />
           </div>
         </div>
