@@ -17,6 +17,10 @@ export function HomePage() {
     navigate('/profile');
   };
 
+  const goToMarketplace = () => {
+    navigate('/marketplace');
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Hero Section */}
@@ -63,6 +67,13 @@ export function HomePage() {
                     >
                       <Wrench className="w-5 h-5" />
                       <span>My Garage</span>
+                    </button>
+                    <button 
+                      onClick={goToMarketplace}
+                      className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
+                    >
+                      <Car className="w-5 h-5" />
+                      <span>Marketplace</span>
                     </button>
                   </div>
                 </>
