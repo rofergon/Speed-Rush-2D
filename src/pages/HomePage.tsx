@@ -3,7 +3,7 @@ import { Gamepad2, Car, Trophy, Users, ChevronRight, Github, Wrench } from 'luci
 import { useNavigate } from 'react-router-dom';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
-import { CarNFTGenerator } from '../components/CarNFTGenerator';
+import { GameInfo } from '../components/GameInfo';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -15,6 +15,10 @@ export function HomePage() {
 
   const goToGarage = () => {
     navigate('/profile');
+  };
+
+  const goToMarketplace = () => {
+    navigate('/marketplace');
   };
 
   return (
@@ -32,8 +36,13 @@ export function HomePage() {
         
         <div className="relative max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-600">
-              Speed Rush 2D
+            <h1 className="text-6xl md:text-8xl font-extrabold mb-8 relative">
+              <span className="absolute inset-0 text-white [text-shadow:_6px_6px_0_rgb(255_255_255),_-6px_-6px_0_rgb(255_255_255),_6px_-6px_0_rgb(255_255_255),_-6px_6px_0_rgb(255_255_255),_6px_0_0_rgb(255_255_255),_-6px_0_0_rgb(255_255_255),_0_6px_0_rgb(255_255_255),_0_-6px_0_rgb(255_255_255),_4px_4px_0_rgb(255_255_255),_-4px_-4px_0_rgb(255_255_255),_4px_-4px_0_rgb(255_255_255),_-4px_4px_0_rgb(255_255_255)]">
+                Speed Rush 2D
+              </span>
+              <span className="relative bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 animate-pulse drop-shadow-[0_0_25px_rgba(234,179,8,0.3)]">
+                Speed Rush 2D
+              </span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-gray-300">
               Experience the thrill of high-speed racing in this action-packed 2D adventure
@@ -42,7 +51,7 @@ export function HomePage() {
               <ConnectKitButton />
               {isConnected && (
                 <>
-                  <CarNFTGenerator />
+                  <GameInfo />
                   <div className="flex space-x-4">
                     <button 
                       onClick={goToGame}
@@ -59,6 +68,13 @@ export function HomePage() {
                       <Wrench className="w-5 h-5" />
                       <span>My Garage</span>
                     </button>
+                    <button 
+                      onClick={goToMarketplace}
+                      className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
+                    >
+                      <Car className="w-5 h-5" />
+                      <span>Marketplace</span>
+                    </button>
                   </div>
                 </>
               )}
@@ -74,18 +90,18 @@ export function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard 
               icon={<Car />}
-              title="Multiple Cars"
-              description="Choose from a variety of unique vehicles, each with their own characteristics"
+              title="NFT Cars"
+              description="Each car is a unique NFT with special characteristics and customizable parts"
             />
             <FeatureCard 
               icon={<Trophy />}
-              title="Competitive Racing"
-              description="Compete in intense races and climb the global leaderboards"
+              title="Blockchain Competition"
+              description="Your race results are recorded on the Lens network as NFTs with seasonal rewards"
             />
             <FeatureCard 
               icon={<Users />}
-              title="Multiplayer"
-              description="Compete against friends or challenge players from around the world"
+              title="Repair System"
+              description="Keep your car in optimal condition at the workshop using GRASS tokens"
             />
           </div>
         </div>
