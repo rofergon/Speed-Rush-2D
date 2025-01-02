@@ -4,11 +4,17 @@ using UnityEngine;
 
 public class TopDownCarController : MonoBehaviour
 {
-    [Header("Car settings")]
+    [Header("Car Base Stats")]
+    private const float BASE_MAX_SPEED = 89.8f;
+    private const float BASE_ACCELERATION = 30.0f;
+    private const float BASE_TURN = 3.5f;
+    private const float BASE_DRIFT = 0.95f;
+
+    [Header("Car Current Stats")]
     public float driftFactor = 0.95f;
     public float accelerationFactor = 30.0f;
     public float turnFactor = 3.5f;
-    public float maxSpeed = 20;
+    public float maxSpeed = 89.8f;
 
     [Header("Sprites")]
     public SpriteRenderer carSpriteRenderer;
@@ -280,5 +286,26 @@ public class TopDownCarController : MonoBehaviour
             JumpData jumpData = collider2d.GetComponent<JumpData>();
             Jump(jumpData.jumpHeightScale, jumpData.jumpPushScale, carCollider.gameObject.layer);
         }
+    }
+
+    public void UpdateStatsWithPercentages(float speedPercentage, float accelerationPercentage, float handlingPercentage)
+    {
+        // Asegurar que los porcentajes estén entre 0 y 100
+        speedPercentage = Mathf.Clamp(speedPercentage, 0f, 100f);
+        accelerationPercentage = Mathf.Clamp(accelerationPercentage, 0f, 100f);
+        handlingPercentage = Mathf.Clamp(handlingPercentage, 0f, 100f);
+
+        // Convertir porcentajes a multiplicadores (0-1)
+        float speedMultiplier = speedPercentage / 100f;
+        float accelerationMultiplier = accelerationPercentage / 100f;
+        float handlingMultiplier = handlingPercentage / 100f;
+
+        // Aplicar los multiplicadores a las estadísticas base
+        maxSpeed = BASE_MAX_SPEED * speedMultiplier;
+        accelerationFactor = BASE_ACCELERATION * accelerationMultiplier;
+        turnFactor = BASE_TURN * handlingMultiplier;
+        driftFactor = BASE_DRIFT * handlingMultiplier;
+
+        Debug.Log($"Stats Updated - Speed: {speedPercentage}%, Acceleration: {accelerationPercentage}%, Handling: {handlingPercentage}%");
     }
 }
