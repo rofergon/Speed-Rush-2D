@@ -8,6 +8,7 @@ public class CarSkinLoader : MonoBehaviour
     // Referencia al SpriteRenderer del carro
     public SpriteRenderer carSpriteRenderer;
     public SpriteRenderer carShadowRenderer;
+    public PreRaceCanvas preRaceCanvas;
 
     [DllImport("__Internal")]
     private static extern void RequestCarNFTImage();
@@ -45,7 +46,7 @@ public class CarSkinLoader : MonoBehaviour
         {
             // Convertir base64 a bytes
             byte[] imageBytes = Convert.FromBase64String(imageBase64);
-            
+
             // Crear una textura desde los bytes
             Texture2D texture = new Texture2D(2, 2);
             bool success = texture.LoadImage(imageBytes);
@@ -57,23 +58,24 @@ public class CarSkinLoader : MonoBehaviour
             }
 
             Debug.Log($"[CarSkinLoader] Texture created: {texture.width}x{texture.height}");
-            
+
             // Crear un sprite desde la textura
             Sprite carSprite = Sprite.Create(
-                texture, 
+                texture,
                 new Rect(0, 0, texture.width, texture.height),
-                new Vector2(0.3f, 0.3f),
-                100f // Pixels per unit
+                new Vector2(0.5f, 0.5f), // Punto de pivote en el centro
+                200f // Pixels per unit
             );
 
             // Asignar el sprite al renderer
             if (carSpriteRenderer != null)
             {
                 carSpriteRenderer.sprite = carSprite;
-                // Rotar -90 grados y escalar al 40%
+                // Solo rotar -90 grados
                 carSpriteRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
-                carSpriteRenderer.transform.localScale = Vector3.one * 0.3f;
-                Debug.Log("[CarSkinLoader] Sprite assigned to car renderer with rotation and scale adjustments");
+                // Mantener escala en 1
+                carSpriteRenderer.transform.localScale = Vector3.one;
+                Debug.Log("[CarSkinLoader] Sprite assigned to car renderer");
             }
             else
             {
@@ -84,14 +86,28 @@ public class CarSkinLoader : MonoBehaviour
             if (carShadowRenderer != null)
             {
                 carShadowRenderer.sprite = carSprite;
-                // Aplicar la misma rotación y escala a la sombra
                 carShadowRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
-                carShadowRenderer.transform.localScale = Vector3.one * 0.3f;
-                Debug.Log("[CarSkinLoader] Sprite assigned to shadow renderer with rotation and scale adjustments");
+                carShadowRenderer.transform.localScale = Vector3.one;
+                Debug.Log("[CarSkinLoader] Shadow sprite updated");
             }
             else
             {
                 Debug.LogError("[CarSkinLoader] carShadowRenderer is null");
+            }
+
+            // Ajustar la escala del objeto Car principal
+            Transform carTransform = transform.parent;
+            if (carTransform != null)
+            {
+                carTransform.localScale = Vector3.one;
+                Debug.Log("[CarSkinLoader] Car transform scale reset to 1");
+            }
+
+            // Actualizar la vista previa en el canvas de pre-carrera
+            if (preRaceCanvas != null)
+            {
+                preRaceCanvas.UpdateCarPreview(carSprite);
+                Debug.Log("[CarSkinLoader] Preview image updated in pre-race canvas");
             }
         }
         catch (Exception e)

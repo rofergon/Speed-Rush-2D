@@ -247,10 +247,7 @@ export async function mintCar(
       signer
     );
 
-    // Convertir el precio de ETH a Wei
     const mintPriceWei = ethers.parseEther(mintPrice);
-
-    // Preparar los datos de las partes para el contrato
     const partsData = carData.parts.map(part => ({
       partType: part.partType,
       stat1: part.stat1,
@@ -259,17 +256,14 @@ export async function mintCar(
       imageURI: part.imageURI
     }));
 
-    // Llamar a la función mintCar del contrato
     const tx = await carNFTContract.mintCar(
       carData.carImageURI,
       partsData,
       { value: mintPriceWei }
     );
 
-    console.log('Mint transaction:', tx);
     return tx.hash;
   } catch (error) {
-    console.error('Error minting car:', error);
     throw error;
   }
 }
@@ -284,24 +278,17 @@ export async function getUserCars(address: string): Promise<any[]> {
       signer
     );
 
-    // Obtener los IDs de los carros
     const carIds = await carNFTContract.getCarsByOwner(address);
-    console.log('Car IDs for address:', address, carIds);
-
-    // Convertir el resultado a un array y asegurar que son BigInt
     const carIdsArray = Array.from(carIds, (id: any) => BigInt(id.toString()));
-    console.log('Converted car IDs:', carIdsArray);
 
-    // Cargar los carros uno por uno para evitar que un error en uno afecte a los demás
-    const cars = [];
-    for (const carId of carIdsArray) {
+    const carPromises = carIdsArray.map(async (carId) => {
       try {
-        // Intentar obtener los metadatos del carro
-        const metadata = await carNFTContract.getFullCarMetadata(carId);
-        const parts = await getCarParts(carId.toString());
-        
-        // Mapear los datos del carro
-        const mappedCar = {
+        const [metadata, parts] = await Promise.all([
+          carNFTContract.getFullCarMetadata(carId),
+          getCarParts(carId.toString())
+        ]);
+
+        return {
           id: carId.toString(),
           carImageURI: metadata.carImageURI,
           owner: metadata.owner,
@@ -316,20 +303,15 @@ export async function getUserCars(address: string): Promise<any[]> {
           },
           parts: parts
         };
-
-        console.log('Mapped car data:', mappedCar);
-        cars.push(mappedCar);
-      } catch (error) {
-        console.error(`Error loading car ${carId}:`, error);
-        // Continuamos con el siguiente carro si hay un error
-        continue;
+      } catch {
+        return null;
       }
-    }
+    });
 
-    console.log('Cars loaded:', cars);
-    return cars;
+    const cars = await Promise.all(carPromises);
+    const validCars = cars.filter(car => car !== null);
+    return validCars;
   } catch (error) {
-    console.error('Error getting user cars:', error);
     throw error;
   }
 }
@@ -339,7 +321,6 @@ export async function getCarParts(carId: string): Promise<any[]> {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     
-    // Obtener las referencias a los contratos
     const carNFTContract = new ethers.Contract(
       import.meta.env.VITE_CAR_NFT_ADDRESS,
       CarNFTAbi.abi,
@@ -352,15 +333,11 @@ export async function getCarParts(carId: string): Promise<any[]> {
       signer
     );
 
-    // Obtener la composición del carro (IDs de las partes)
     const { partIds } = await carNFTContract.getCarComposition(carId);
-    console.log('Part IDs for car:', carId, partIds);
 
-    // Obtener los detalles de cada parte
-    const partPromises = partIds.map(async (partId: bigint) => {
+    const parts = await Promise.all(partIds.map(async (partId: bigint) => {
       const stats = await carPartContract.getPartStats(partId);
       
-      // Mapear los stats según el tipo de parte
       const mappedStats = {
         partId: partId.toString(),
         partType: Number(stats.partType),
@@ -368,7 +345,6 @@ export async function getCarParts(carId: string): Promise<any[]> {
         stats: {}
       };
 
-      // Asignar los stats según el tipo de parte
       switch(Number(stats.partType)) {
         case 0: // ENGINE
           mappedStats.stats = {
@@ -394,13 +370,10 @@ export async function getCarParts(carId: string): Promise<any[]> {
       }
 
       return mappedStats;
-    });
+    }));
 
-    const parts = await Promise.all(partPromises);
-    console.log('Parts loaded:', parts);
     return parts;
   } catch (error) {
-    console.error('Error getting car parts:', error);
     throw error;
   }
 }
