@@ -5,10 +5,10 @@ using UnityEngine;
 public class TopDownCarController : MonoBehaviour
 {
     [Header("Car Base Stats")]
-    private const float BASE_MAX_SPEED = 89.8f;
-    private const float BASE_ACCELERATION = 30.0f;
-    private const float BASE_TURN = 3.5f;
-    private const float BASE_DRIFT = 0.95f;
+    public const float BASE_MAX_SPEED = 89.8f;
+    public const float BASE_ACCELERATION = 30.0f;
+    public const float BASE_TURN = 3.5f;
+    public const float BASE_DRIFT = 0.95f;
 
     [Header("Car Current Stats")]
     public float driftFactor = 0.95f;

@@ -20,6 +20,17 @@ var CarNFTPlugin = {
         } catch (error) {
             console.error("[CarNFTPlugin] Error in RequestCarNFTImage:", error);
         }
+    },
+
+    UpdateCarStats: function(statsJson) {
+        try {
+            console.log("[CarNFTPlugin] Receiving car stats:", UTF8ToString(statsJson));
+            SendMessage("PreRaceCanvas", "OnStatsReceived", UTF8ToString(statsJson));
+            console.log("[CarNFTPlugin] Stats sent to Unity successfully");
+        } catch (error) {
+            console.error("[CarNFTPlugin] Error updating car stats:", error);
+        }
     }
 };
+
 mergeInto(LibraryManager.library, CarNFTPlugin); 

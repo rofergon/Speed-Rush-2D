@@ -99,6 +99,17 @@ export function GamePage() {
               const base64data = (reader.result as string).split(',')[1];
               console.log("[Frontend] Imagen cargada, enviando a Unity, longitud:", base64data.length);
               instance.SendMessage('Car', 'OnImageReceived', base64data);
+
+              // Enviar las estadísticas
+              const stats = {
+                speed: activeCar.combinedStats.speed,
+                acceleration: activeCar.combinedStats.acceleration,
+                handling: activeCar.combinedStats.handling,
+                drift: activeCar.combinedStats.driftFactor,
+                turn: activeCar.combinedStats.turnFactor,
+                maxSpeed: activeCar.combinedStats.maxSpeed
+              };
+              instance.SendMessage('PreRaceCanvas', 'OnStatsReceived', JSON.stringify(stats));
             };
             
             reader.readAsDataURL(blob);

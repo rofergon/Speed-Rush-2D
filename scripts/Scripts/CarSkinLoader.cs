@@ -8,6 +8,7 @@ public class CarSkinLoader : MonoBehaviour
     // Referencia al SpriteRenderer del carro
     public SpriteRenderer carSpriteRenderer;
     public SpriteRenderer carShadowRenderer;
+    public PreRaceCanvas preRaceCanvas;
 
     [DllImport("__Internal")]
     private static extern void RequestCarNFTImage();
@@ -100,6 +101,13 @@ public class CarSkinLoader : MonoBehaviour
             {
                 carTransform.localScale = Vector3.one;
                 Debug.Log("[CarSkinLoader] Car transform scale reset to 1");
+            }
+
+            // Actualizar la vista previa en el canvas de pre-carrera
+            if (preRaceCanvas != null)
+            {
+                preRaceCanvas.UpdateCarPreview(carSprite);
+                Debug.Log("[CarSkinLoader] Preview image updated in pre-race canvas");
             }
         }
         catch (Exception e)
