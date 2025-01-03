@@ -316,17 +316,19 @@ export function GamePage() {
                   )}
                 </div>
               ) : (
-                <div id="unity-container" className="unity-desktop">
-                  <canvas id="unity-canvas" width={960} height={600} tabIndex={-1}></canvas>
-                  <div id="unity-loading-bar">
-                    <div id="unity-logo"></div>
-                    <div id="unity-progress-bar-empty">
-                      <div id="unity-progress-bar-full"></div>
+                <div className="unity-game-container">
+                  <div id="unity-container" className="unity-desktop">
+                    <canvas id="unity-canvas" width={1440} height={810} tabIndex={-1}></canvas>
+                    <div id="unity-loading-bar">
+                      <div id="unity-logo"></div>
+                      <div id="unity-progress-bar-empty">
+                        <div id="unity-progress-bar-full"></div>
+                      </div>
                     </div>
-                  </div>
-                  <div id="unity-warning"> </div>
-                  <div id="unity-footer">
-                    <div id="unity-fullscreen-button"></div>
+                    <div id="unity-warning"> </div>
+                    <div id="unity-footer">
+                      <div id="unity-fullscreen-button"></div>
+                    </div>
                   </div>
                 </div>
               )}
