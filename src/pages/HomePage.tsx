@@ -37,7 +37,7 @@ export function HomePage() {
             <div className="flex items-center space-x-4">
               <Link to="/game" className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
                 <Gamepad2 className="inline-block w-5 h-5 mr-1" />
-                Jugar
+                Play
               </Link>
               <Link to="/profile" className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
                 <Wrench className="inline-block w-5 h-5 mr-1" />
@@ -45,7 +45,7 @@ export function HomePage() {
               </Link>
               <Link to="/marketplace" className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
                 <Car className="inline-block w-5 h-5 mr-1" />
-                Mercado
+                Market
               </Link>
               <ConnectKitButton />
             </div>
