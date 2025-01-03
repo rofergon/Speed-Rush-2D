@@ -16,6 +16,13 @@ interface CarGenerationResponse {
   }[];
 }
 
+// Enum para los tipos de partes
+enum PartType {
+  ENGINE = 0,
+  TRANSMISSION = 1,
+  WHEELS = 2
+}
+
 export function MintCarButton() {
   const { address } = useAccount();
   const [isMinting, setIsMinting] = useState(false);
@@ -43,7 +50,21 @@ export function MintCarButton() {
       throw new Error(`Error al generar el carro: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    // Asegurarnos de que partType sea un número
+    const processedParts = data.parts.map((part: any, index: number) => ({
+      ...part,
+      partType: index, // Asignar 0 para ENGINE, 1 para TRANSMISSION, 2 para WHEELS
+      stat1: Number(part.stat1),
+      stat2: Number(part.stat2),
+      stat3: Number(part.stat3)
+    }));
+
+    return {
+      carImageURI: data.carImageURI,
+      parts: processedParts
+    };
   };
 
   const handleMint = async () => {
