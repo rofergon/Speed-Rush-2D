@@ -292,16 +292,16 @@ export async function getUserCars(address: string): Promise<any[]> {
     const carIdsArray = Array.from(carIds, (id: any) => BigInt(id.toString()));
     console.log('Converted car IDs:', carIdsArray);
 
-    // Cargar los carros uno por uno para evitar que un error en uno afecte a los demás
-    const cars = [];
-    for (const carId of carIdsArray) {
+    // Crear promesas para obtener los metadatos y partes de todos los carros en paralelo
+    const carPromises = carIdsArray.map(async (carId) => {
       try {
-        // Intentar obtener los metadatos del carro
-        const metadata = await carNFTContract.getFullCarMetadata(carId);
-        const parts = await getCarParts(carId.toString());
-        
-        // Mapear los datos del carro
-        const mappedCar = {
+        // Obtener metadatos y partes en paralelo
+        const [metadata, parts] = await Promise.all([
+          carNFTContract.getFullCarMetadata(carId),
+          getCarParts(carId.toString())
+        ]);
+
+        return {
           id: carId.toString(),
           carImageURI: metadata.carImageURI,
           owner: metadata.owner,
@@ -316,18 +316,20 @@ export async function getUserCars(address: string): Promise<any[]> {
           },
           parts: parts
         };
-
-        console.log('Mapped car data:', mappedCar);
-        cars.push(mappedCar);
       } catch (error) {
         console.error(`Error loading car ${carId}:`, error);
-        // Continuamos con el siguiente carro si hay un error
-        continue;
+        return null; // Retornamos null para los carros que fallen
       }
-    }
+    });
 
-    console.log('Cars loaded:', cars);
-    return cars;
+    // Esperar a que todas las promesas se resuelvan
+    const cars = await Promise.all(carPromises);
+    
+    // Filtrar los carros que fallaron (null)
+    const validCars = cars.filter(car => car !== null);
+    console.log('Cars loaded:', validCars);
+    
+    return validCars;
   } catch (error) {
     console.error('Error getting user cars:', error);
     throw error;
@@ -352,12 +354,12 @@ export async function getCarParts(carId: string): Promise<any[]> {
       signer
     );
 
-    // Obtener la composición del carro (IDs de las partes)
+    // Obtener la composición del carro y crear promesas para todas las partes
     const { partIds } = await carNFTContract.getCarComposition(carId);
     console.log('Part IDs for car:', carId, partIds);
 
-    // Obtener los detalles de cada parte
-    const partPromises = partIds.map(async (partId: bigint) => {
+    // Obtener los detalles de todas las partes en paralelo
+    const parts = await Promise.all(partIds.map(async (partId: bigint) => {
       const stats = await carPartContract.getPartStats(partId);
       
       // Mapear los stats según el tipo de parte
@@ -394,9 +396,8 @@ export async function getCarParts(carId: string): Promise<any[]> {
       }
 
       return mappedStats;
-    });
+    }));
 
-    const parts = await Promise.all(partPromises);
     console.log('Parts loaded:', parts);
     return parts;
   } catch (error) {
