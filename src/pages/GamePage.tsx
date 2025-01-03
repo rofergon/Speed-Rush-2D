@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Leaderboard } from '../components/Leaderboard';
-import { Home } from 'lucide-react';
+import { Home, Gamepad2, Car as CarIcon, Wrench } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/unity.css';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
 import { web3Service } from '../services/web3Service';
 import { activeCarService } from '../services/activeCarService';
-import { Car } from '../types/car';
+import type { Car } from '../types/car';
 
 // Declare window type
 declare global {
@@ -29,6 +29,7 @@ export function GamePage() {
   const [userCars, setUserCars] = useState<Car[]>([]);
   const [randomCars, setRandomCars] = useState<Car[]>([]);
   const [isGameStarted, setIsGameStarted] = useState(false);
+  const [isAlternativeSkin, setIsAlternativeSkin] = useState(false);
   const navigate = useNavigate();
 
   // Función para cargar los carros del usuario
@@ -45,6 +46,55 @@ export function GamePage() {
     }
   };
 
+  // Función para enviar la imagen del NFT a Unity
+  const loadCarImage = async (instance: UnityInstance) => {
+    try {
+      const activeCar = activeCarService.getActiveCar();
+      if (activeCar) {
+        // Usar displayImageURI si existe, de lo contrario usar la lógica de skin
+        const imageUrl = activeCar.displayImageURI || (isAlternativeSkin ? activeCar.parts[2]?.imageURI : activeCar.carImageURI);
+        console.log("[Frontend] Enviando imagen del carro a Unity:", imageUrl);
+        try {
+          const response = await fetch(imageUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const blob = await response.blob();
+          const reader = new FileReader();
+          
+          reader.onloadend = () => {
+            const base64data = (reader.result as string).split(',')[1];
+            console.log("[Frontend] Imagen cargada, enviando a Unity, longitud:", base64data.length);
+            instance.SendMessage('Car', 'OnImageReceived', base64data);
+
+            // Enviar las estadísticas
+            const stats = {
+              speed: activeCar.combinedStats.speed,
+              acceleration: activeCar.combinedStats.acceleration,
+              handling: activeCar.combinedStats.handling,
+              drift: activeCar.combinedStats.driftFactor,
+              turn: activeCar.combinedStats.turnFactor,
+              maxSpeed: activeCar.combinedStats.maxSpeed
+            };
+            instance.SendMessage('PreRaceCanvas', 'OnStatsReceived', JSON.stringify(stats));
+          };
+          
+          reader.readAsDataURL(blob);
+        } catch (error) {
+          console.error('[Frontend] Error al cargar la imagen:', error);
+        }
+      } else {
+        console.error("[Frontend] No hay carro activo");
+      }
+    } catch (error) {
+      console.error('[Frontend] Error en loadCarImage:', error);
+    }
+  };
+
+  const handleStartGame = () => {
+    setIsGameStarted(true);
+  };
+
   // Cargar carros cuando el usuario se conecta
   useEffect(() => {
     if (isConnected && address) {
@@ -52,9 +102,12 @@ export function GamePage() {
     }
   }, [isConnected, address]);
 
-  const handleStartGame = () => {
-    setIsGameStarted(true);
-  };
+  // Efecto para recargar la imagen cuando cambie la skin
+  useEffect(() => {
+    if (unityLoaded && unityInstance) {
+      loadCarImage(unityInstance);
+    }
+  }, [isAlternativeSkin, unityLoaded]);
 
   useEffect(() => {
     if (!isConnected || !isGameStarted) {
@@ -79,49 +132,6 @@ export function GamePage() {
       laps.forEach(lap => console.log(lap));
 
       alert('Successful minting!\n' + laps.join('\n'));
-    };
-
-    // Función para enviar la imagen del NFT a Unity
-    const loadCarImage = async (instance: UnityInstance) => {
-      try {
-        const activeCar = activeCarService.getActiveCar();
-        if (activeCar) {
-          console.log("[Frontend] Enviando imagen del carro a Unity:", activeCar.carImageURI);
-          try {
-            const response = await fetch(activeCar.carImageURI);
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const blob = await response.blob();
-            const reader = new FileReader();
-            
-            reader.onloadend = () => {
-              const base64data = (reader.result as string).split(',')[1];
-              console.log("[Frontend] Imagen cargada, enviando a Unity, longitud:", base64data.length);
-              instance.SendMessage('Car', 'OnImageReceived', base64data);
-
-              // Enviar las estadísticas
-              const stats = {
-                speed: activeCar.combinedStats.speed,
-                acceleration: activeCar.combinedStats.acceleration,
-                handling: activeCar.combinedStats.handling,
-                drift: activeCar.combinedStats.driftFactor,
-                turn: activeCar.combinedStats.turnFactor,
-                maxSpeed: activeCar.combinedStats.maxSpeed
-              };
-              instance.SendMessage('PreRaceCanvas', 'OnStatsReceived', JSON.stringify(stats));
-            };
-            
-            reader.readAsDataURL(blob);
-          } catch (error) {
-            console.error('[Frontend] Error al cargar la imagen:', error);
-          }
-        } else {
-          console.error("[Frontend] No hay carro activo");
-        }
-      } catch (error) {
-        console.error('[Frontend] Error en loadCarImage:', error);
-      }
     };
 
     window.RequestCarNFTImage = async () => {
@@ -222,119 +232,82 @@ export function GamePage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      <div className="max-w-[95%] mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <Link 
-            to="/" 
-            className="inline-flex items-center space-x-2 text-gray-300 hover:text-white"
-          >
-            <Home className="w-5 h-5" />
-            <span>Back to Home</span>
-          </Link>
-          <ConnectKitButton />
+      {/* Navbar */}
+      <nav className="bg-gray-800 shadow-lg">
+        <div className="max-w-[98%] mx-auto px-4">
+          <div className="flex justify-between h-16 items-center">
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center">
+                <img src="/logo.png" alt="Logo" className="h-8 w-8 mr-2" />
+                <span className="text-xl font-bold">Speed Rush 2D</span>
+              </Link>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link to="/game" className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
+                <Gamepad2 className="inline-block w-5 h-5 mr-1" />
+                Play
+              </Link>
+              <Link to="/profile" className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
+                <Wrench className="inline-block w-5 h-5 mr-1" />
+                Garage
+              </Link>
+              <Link to="/marketplace" className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
+                <CarIcon className="inline-block w-5 h-5 mr-1" />
+                Market
+              </Link>
+              <ConnectKitButton />
+            </div>
+          </div>
         </div>
-        
+      </nav>
+
+      <div className="max-w-[98%] mx-auto px-4 py-8">
         {!isConnected ? (
           <div className="text-center py-20">
-            <h2 className="text-2xl font-bold mb-4">Conecta tu Wallet para Jugar</h2>
-            <p className="text-gray-400 mb-8">Necesitas conectar tu wallet para acceder al juego</p>
+            <h2 className="text-2xl font-bold mb-4">Connect Your Wallet to Play</h2>
+            <p className="text-gray-400 mb-8">You need to connect your wallet to access the game</p>
+            <ConnectKitButton />
+          </div>
+        ) : !isGameStarted ? (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-bold mb-4">Ready to Race?</h2>
+            <p className="text-gray-400 mb-8">Make sure you have a car selected before starting</p>
+            
+            {/* Skin change button */}
+            <button
+              onClick={() => setIsAlternativeSkin(!isAlternativeSkin)}
+              className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mb-4 flex items-center justify-center mx-auto gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v4a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+              </svg>
+              <span>{isAlternativeSkin ? 'Use Main Skin' : 'Use Core Skin'}</span>
+            </button>
+
+            <button
+              onClick={handleStartGame}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
+            >
+              <Gamepad2 className="w-5 h-5" />
+              <span>Start Race</span>
+            </button>
           </div>
         ) : (
           <div className="flex flex-col gap-8">
-            <div className="w-full bg-gray-800 rounded-lg p-4">
-              <h3 className="text-xl font-bold mb-4">Carro Seleccionado</h3>
-              {activeCarService.getActiveCar() ? (
-                <div className="flex items-center gap-4">
-                  <div className="w-32 h-32 rounded-lg overflow-hidden">
-                    <img 
-                      src={activeCarService.getActiveCar()?.carImageURI} 
-                      alt="Carro seleccionado" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold">ID: #{activeCarService.getActiveCar()?.id}</p>
-                    <p className="text-gray-400">
-                      Velocidad: {activeCarService.getActiveCar()?.combinedStats.speed || 0}
-                    </p>
-                    <p className="text-gray-400">
-                      Aceleración: {activeCarService.getActiveCar()?.combinedStats.acceleration || 0}
-                    </p>
-                    <p className="text-gray-400">
-                      Manejo: {activeCarService.getActiveCar()?.combinedStats.handling || 0}
-                    </p>
+            {/* Unity Game Container */}
+            <div className="webgl-content">
+              <div id="unity-container" className="unity-desktop">
+                <canvas id="unity-canvas"></canvas>
+                <div id="unity-loading-bar">
+                  <div id="unity-logo"></div>
+                  <div id="unity-progress-bar-empty">
+                    <div id="unity-progress-bar-full"></div>
                   </div>
                 </div>
-              ) : (
-                <p className="text-gray-400">No hay carro seleccionado</p>
-              )}
-            </div>
-
-            <div className="w-full bg-gray-800 rounded-lg p-8">
-              <h2 className="text-2xl font-bold text-center mb-4">Speed Rush 2D</h2>
-              
-              {!isGameStarted ? (
-                <div className="space-y-8">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {randomCars.map((car) => (
-                      <div 
-                        key={car.id}
-                        onClick={() => {
-                          activeCarService.setActiveCar(car);
-                          loadUserCars(); // Recargar los carros para actualizar la selección
-                        }}
-                        className={`cursor-pointer p-4 rounded-lg transition-all ${
-                          activeCarService.getActiveCar()?.id === car.id 
-                            ? 'bg-red-600' 
-                            : 'bg-gray-700 hover:bg-gray-600'
-                        }`}
-                      >
-                        <img 
-                          src={car.carImageURI} 
-                          alt={`Car ${car.id}`} 
-                          className="w-full h-32 object-contain mb-2"
-                        />
-                        <div className="text-sm">
-                          <p className="font-bold">Car #{car.id}</p>
-                          <p>Velocidad: {car.combinedStats.speed}</p>
-                          <p>Aceleración: {car.combinedStats.acceleration}</p>
-                          <p>Manejo: {car.combinedStats.handling}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {activeCarService.getActiveCar() && (
-                    <div className="text-center">
-                      <button
-                        onClick={handleStartGame}
-                        className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg text-lg"
-                      >
-                        Iniciar Carrera
-                      </button>
-                    </div>
-                  )}
+                <div id="unity-footer">
+                  <div id="unity-fullscreen-button"></div>
                 </div>
-              ) : (
-                <div className="unity-game-container">
-                  <div id="unity-container" className="unity-desktop">
-                    <canvas id="unity-canvas" width={1440} height={810} tabIndex={-1}></canvas>
-                    <div id="unity-loading-bar">
-                      <div id="unity-logo"></div>
-                      <div id="unity-progress-bar-empty">
-                        <div id="unity-progress-bar-full"></div>
-                      </div>
-                    </div>
-                    <div id="unity-warning"> </div>
-                    <div id="unity-footer">
-                      <div id="unity-fullscreen-button"></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="max-w-2xl mx-auto w-full">
-              <Leaderboard />
+              </div>
             </div>
           </div>
         )}

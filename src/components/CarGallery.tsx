@@ -7,7 +7,12 @@ import { Car, Part } from '../types/car';
 import { useNavigate } from 'react-router-dom';
 import { Speedometer } from './Speedometer';
 
-export function CarGallery() {
+interface CarGalleryProps {
+  alternativeSkin?: boolean;
+  onSkinChange?: (newSkin: boolean) => void;
+}
+
+export function CarGallery({ alternativeSkin = false, onSkinChange }: CarGalleryProps) {
   const { address } = useAccount();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,25 +31,26 @@ export function CarGallery() {
     }
   }, [address]);
 
+  useEffect(() => {
+    const storedActiveCar = activeCarService.getActiveCar();
+    if (storedActiveCar) {
+      setActiveCar(storedActiveCar);
+    }
+  }, [alternativeSkin]);
+
   const loadCars = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Intentamos cargar los carros uno por uno para evitar que un error en uno afecte a los demás
       const userCars = await web3Service.getUserCars(address!);
-      console.log('Carros obtenidos:', userCars);
       
-      // Filtramos los carros que tienen datos válidos
       const validCars = userCars.filter(car => {
         try {
-          // Verificamos que el carro tenga la estructura básica necesaria
           if (!car || !car.id || !car.carImageURI || !car.parts) {
-            console.log(`Carro inválido (estructura incompleta):`, car);
             return false;
           }
 
-          // Verificamos que las estadísticas sean válidas
           if (car.combinedStats) {
             const stats = [
               car.combinedStats.speed,
@@ -55,7 +61,6 @@ export function CarGallery() {
               car.combinedStats.maxSpeed
             ];
 
-            // Si alguna estadística es undefined o NaN, la consideramos como 0
             const hasInvalidStats = stats.some(stat => 
               stat === undefined || 
               stat === null || 
@@ -63,48 +68,58 @@ export function CarGallery() {
             );
 
             if (hasInvalidStats) {
-              console.log(`Carro ${car.id} tiene estadísticas inválidas:`, car.combinedStats);
-              // Aún así lo incluimos, porque manejaremos las estadísticas inválidas en renderStats
               return true;
             }
           }
 
           return true;
-        } catch (error) {
-          console.error(`Error procesando carro ${car?.id}:`, error);
+        } catch {
           return false;
         }
       });
 
-      console.log('Carros válidos:', validCars);
-
       if (validCars.length === 0) {
-        setError('No se encontraron carros válidos en tu colección.');
+        setError('No valid cars found in your collection.');
         return;
       }
 
       setCars(validCars);
       
-      // Si hay un carro activo que fue filtrado, seleccionar el primer carro válido
       const storedActiveCar = activeCarService.getActiveCar();
       if (storedActiveCar && !validCars.find(car => car.id === storedActiveCar.id)) {
         handleSelectCar(validCars[0]);
       }
     } catch (err) {
-      console.error('Error loading cars:', err);
-      setError('Error cargando los carros. Por favor, intenta de nuevo más tarde.');
+      setError('Error loading cars. Please try again later.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePartClick = (part: Part) => {
-    setSelectedPart(part);
+  const handlePartClick = (part: Part, car: Car) => {
+    if (part.partType === 2) {
+      const newSkinState = !alternativeSkin;
+      const carWithNewSkin = {
+        ...car,
+        displayImageURI: newSkinState ? part.imageURI : car.carImageURI
+      };
+      activeCarService.setActiveCar(carWithNewSkin);
+      setActiveCar(carWithNewSkin);
+      if (typeof onSkinChange === 'function') {
+        onSkinChange(newSkinState);
+      }
+    } else {
+      setSelectedPart(part);
+    }
   };
 
   const handleSelectCar = (car: Car) => {
-    activeCarService.setActiveCar(car);
-    setActiveCar(car);
+    const carWithCorrectSkin = {
+      ...car,
+      displayImageURI: alternativeSkin ? car.parts[2]?.imageURI : car.carImageURI
+    };
+    activeCarService.setActiveCar(carWithCorrectSkin);
+    setActiveCar(carWithCorrectSkin);
   };
 
   const handlePlayWithCar = () => {
@@ -121,8 +136,10 @@ export function CarGallery() {
           {car.parts.map((part) => (
             <div
               key={part.partId}
-              onClick={() => handlePartClick(part)}
-              className="bg-gray-700 p-2 rounded-lg cursor-pointer hover:bg-gray-600 transition-colors"
+              onClick={() => handlePartClick(part, car)}
+              className={`bg-gray-700 p-2 rounded-lg cursor-pointer hover:bg-gray-600 transition-colors relative ${
+                alternativeSkin && part.partType === 2 ? 'ring-2 ring-green-500' : ''
+              } ${part.partType === 2 ? 'hover:ring-2 hover:ring-blue-400' : ''}`}
             >
               <img
                 src={part.imageURI}
@@ -134,6 +151,16 @@ export function CarGallery() {
                  part.partType === 1 ? "Transmission" :
                  part.partType === 2 ? "Core" : "Unknown"}
               </div>
+              {alternativeSkin && part.partType === 2 && (
+                <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                  Active
+                </div>
+              )}
+              {part.partType === 2 && (
+                <div className="absolute bottom-1 right-1 text-xs text-gray-400">
+                  Click to change skin
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -154,8 +181,7 @@ export function CarGallery() {
       
       const total = validStats.reduce((sum, stat) => sum + stat, 0);
       return Math.round(total / validStats.length);
-    } catch (error) {
-      console.error('Error calculando estadísticas:', error);
+    } catch {
       return 0;
     }
   };
@@ -165,10 +191,14 @@ export function CarGallery() {
     return typeof stats === 'number' ? stats.toString() : '0';
   };
 
+  const getCarImage = (car: Car) => {
+    return alternativeSkin ? car.parts[2]?.imageURI : car.carImageURI;
+  };
+
   if (!address) {
     return (
       <div className="text-center text-gray-400 py-8">
-        Por favor, conecta tu wallet para ver tus carros
+        Please connect your wallet to view your cars
       </div>
     );
   }
@@ -176,7 +206,7 @@ export function CarGallery() {
   if (loading) {
     return (
       <div className="text-center text-gray-400 py-8">
-        Cargando carros...
+        Loading cars...
       </div>
     );
   }
@@ -208,7 +238,12 @@ export function CarGallery() {
       {activeCar && (
         <div className="mb-8 bg-gray-800 rounded-lg p-6">
           <div className="flex justify-between items-start mb-6">
-            <h3 className="text-xl font-bold text-white">Selected Car</h3>
+            <div>
+              <h3 className="text-xl font-bold text-white">Selected Car</h3>
+              <p className="text-sm text-gray-400">
+                {alternativeSkin ? 'Using Core skin' : 'Using Main skin'}
+              </p>
+            </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={handlePlayWithCar}
@@ -221,12 +256,17 @@ export function CarGallery() {
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
-            <div className="w-full lg:w-2/5 xl:w-1/3">
+            <div className="w-full lg:w-2/5 xl:w-1/3 relative">
               <img
-                src={activeCar.carImageURI}
+                src={getCarImage(activeCar)}
                 alt={`Car ${activeCar.id}`}
                 className="w-full h-auto object-contain rounded-lg"
               />
+              {alternativeSkin && (
+                <div className="absolute top-2 left-2 bg-green-500 text-white px-3 py-1 rounded-full">
+                  Core Skin
+                </div>
+              )}
             </div>
 
             <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-6">
@@ -268,23 +308,34 @@ export function CarGallery() {
               </div>
             </div>
           </div>
+
+          {renderParts(activeCar)}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {cars.map((car) => (
-          <div key={car.id} className="bg-gray-800 rounded-lg p-4">
+          <div
+            key={car.id}
+            className={`bg-gray-800 rounded-lg p-6 cursor-pointer transition-all hover:shadow-lg ${
+              activeCar?.id === car.id ? 'ring-2 ring-red-500' : ''
+            }`}
+            onClick={() => handleSelectCar(car)}
+          >
+            <div className="relative">
+              <img
+                src={getCarImage(car)}
+                alt={`Car ${car.id}`}
+                className="w-full h-48 object-contain rounded-lg mb-4"
+              />
+              <div className="absolute top-2 right-2">
+                <Speedometer value={calculateAverageStats(car)} size={60} />
+              </div>
+            </div>
+
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-lg font-bold text-white">Car #{car.id}</h3>
               <Speedometer value={calculateAverageStats(car)} size={50} />
-            </div>
-
-            <div className="relative mb-4">
-              <img
-                src={car.carImageURI}
-                alt={`Car ${car.id}`}
-                className="w-full h-48 object-contain rounded-lg"
-              />
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-sm mb-4">

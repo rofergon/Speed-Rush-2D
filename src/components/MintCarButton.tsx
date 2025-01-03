@@ -3,6 +3,7 @@ import { web3Service } from '../services/web3Service';
 import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
 import { Speedometer } from './Speedometer';
+import { RefreshCw, Plus } from 'lucide-react';
 
 const BACKEND_URL = "https://speed-rush-2d-backend-production.up.railway.app";
 
@@ -161,7 +162,7 @@ export function MintCarButton() {
 
   const handleMint = async () => {
     if (!address) {
-      alert('Por favor conecta tu wallet primero');
+      alert('Please connect your wallet first');
       return;
     }
 
@@ -252,13 +253,13 @@ export function MintCarButton() {
   const getPartTypeName = (type: number) => {
     switch (type) {
       case PartType.ENGINE:
-        return "Motor";
+        return "Engine";
       case PartType.TRANSMISSION:
-        return "Transmisión";
+        return "Transmission";
       case PartType.WHEELS:
-        return "Ruedas";
+        return "Core";
       default:
-        return "Desconocido";
+        return "Unknown";
     }
   };
 
@@ -266,25 +267,29 @@ export function MintCarButton() {
     <>
       <button
         onClick={handleMint}
+        className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105"
         disabled={isMinting || isGenerating}
-        className={`bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transform transition hover:scale-105 ${
-          (isMinting || isGenerating) ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
       >
-        <span>
-          {isGenerating ? 'Generando carro...' : 
-           isMinting ? 'Minteando...' : 
-           'Mintear Nuevo Carro'}
-        </span>
+        {isGenerating ? (
+          <>
+            <RefreshCw className="w-5 h-5 animate-spin" />
+            <span>Minting...</span>
+          </>
+        ) : (
+          <>
+            <Plus className="w-5 h-5" />
+            <span>Mint New Car</span>
+          </>
+        )}
       </button>
 
-      {/* Diálogo del NFT Minteado */}
+      {/* Minted NFT Dialog */}
       {showDialog && mintedCar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800 rounded-lg p-6 max-w-2xl w-full">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-2xl font-bold text-white">
-                ¡Carro NFT Minteado Exitosamente!
+                NFT Car Successfully Minted!
               </h3>
               <button
                 onClick={() => setShowDialog(false)}
@@ -297,7 +302,7 @@ export function MintCarButton() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Imagen principal y estadísticas generales */}
+              {/* Main image and general stats */}
               <div>
                 <div className="relative mb-4">
                   <img
@@ -333,19 +338,19 @@ export function MintCarButton() {
                 </div>
               </div>
 
-              {/* Estadísticas y partes */}
+              {/* Stats and parts */}
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-gray-700 p-3 rounded-lg">
-                    <span className="text-gray-400 text-sm">Velocidad</span>
+                    <span className="text-gray-400 text-sm">Speed</span>
                     <p className="text-white font-bold">{mintedCar.combinedStats.speed}</p>
                   </div>
                   <div className="bg-gray-700 p-3 rounded-lg">
-                    <span className="text-gray-400 text-sm">Aceleración</span>
+                    <span className="text-gray-400 text-sm">Acceleration</span>
                     <p className="text-white font-bold">{mintedCar.combinedStats.acceleration}</p>
                   </div>
                   <div className="bg-gray-700 p-3 rounded-lg">
-                    <span className="text-gray-400 text-sm">Manejo</span>
+                    <span className="text-gray-400 text-sm">Handling</span>
                     <p className="text-white font-bold">{mintedCar.combinedStats.handling}</p>
                   </div>
                   <div className="bg-gray-700 p-3 rounded-lg">
@@ -353,18 +358,18 @@ export function MintCarButton() {
                     <p className="text-white font-bold">{mintedCar.combinedStats.driftFactor}</p>
                   </div>
                   <div className="bg-gray-700 p-3 rounded-lg">
-                    <span className="text-gray-400 text-sm">Giro</span>
+                    <span className="text-gray-400 text-sm">Turn</span>
                     <p className="text-white font-bold">{mintedCar.combinedStats.turnFactor}</p>
                   </div>
                   <div className="bg-gray-700 p-3 rounded-lg">
-                    <span className="text-gray-400 text-sm">Vel. Máx</span>
+                    <span className="text-gray-400 text-sm">Max Speed</span>
                     <p className="text-white font-bold">{mintedCar.combinedStats.maxSpeed}</p>
                   </div>
                 </div>
 
-                {/* Partes del carro */}
+                {/* Car parts */}
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-2">Partes</h4>
+                  <h4 className="text-lg font-semibold text-white mb-2">Parts</h4>
                   <div className="grid grid-cols-3 gap-2">
                     {mintedCar.parts.map((part) => (
                       <div key={part.partId} className="bg-gray-700 p-2 rounded-lg">
@@ -388,7 +393,7 @@ export function MintCarButton() {
                 onClick={() => setShowDialog(false)}
                 className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg"
               >
-                Cerrar
+                Close
               </button>
             </div>
           </div>

@@ -247,10 +247,7 @@ export async function mintCar(
       signer
     );
 
-    // Convertir el precio de ETH a Wei
     const mintPriceWei = ethers.parseEther(mintPrice);
-
-    // Preparar los datos de las partes para el contrato
     const partsData = carData.parts.map(part => ({
       partType: part.partType,
       stat1: part.stat1,
@@ -259,17 +256,14 @@ export async function mintCar(
       imageURI: part.imageURI
     }));
 
-    // Llamar a la función mintCar del contrato
     const tx = await carNFTContract.mintCar(
       carData.carImageURI,
       partsData,
       { value: mintPriceWei }
     );
 
-    console.log('Mint transaction:', tx);
     return tx.hash;
   } catch (error) {
-    console.error('Error minting car:', error);
     throw error;
   }
 }
@@ -284,18 +278,11 @@ export async function getUserCars(address: string): Promise<any[]> {
       signer
     );
 
-    // Obtener los IDs de los carros
     const carIds = await carNFTContract.getCarsByOwner(address);
-    console.log('Car IDs for address:', address, carIds);
-
-    // Convertir el resultado a un array y asegurar que son BigInt
     const carIdsArray = Array.from(carIds, (id: any) => BigInt(id.toString()));
-    console.log('Converted car IDs:', carIdsArray);
 
-    // Crear promesas para obtener los metadatos y partes de todos los carros en paralelo
     const carPromises = carIdsArray.map(async (carId) => {
       try {
-        // Obtener metadatos y partes en paralelo
         const [metadata, parts] = await Promise.all([
           carNFTContract.getFullCarMetadata(carId),
           getCarParts(carId.toString())
@@ -316,22 +303,15 @@ export async function getUserCars(address: string): Promise<any[]> {
           },
           parts: parts
         };
-      } catch (error) {
-        console.error(`Error loading car ${carId}:`, error);
-        return null; // Retornamos null para los carros que fallen
+      } catch {
+        return null;
       }
     });
 
-    // Esperar a que todas las promesas se resuelvan
     const cars = await Promise.all(carPromises);
-    
-    // Filtrar los carros que fallaron (null)
     const validCars = cars.filter(car => car !== null);
-    console.log('Cars loaded:', validCars);
-    
     return validCars;
   } catch (error) {
-    console.error('Error getting user cars:', error);
     throw error;
   }
 }
@@ -341,7 +321,6 @@ export async function getCarParts(carId: string): Promise<any[]> {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     
-    // Obtener las referencias a los contratos
     const carNFTContract = new ethers.Contract(
       import.meta.env.VITE_CAR_NFT_ADDRESS,
       CarNFTAbi.abi,
@@ -354,15 +333,11 @@ export async function getCarParts(carId: string): Promise<any[]> {
       signer
     );
 
-    // Obtener la composición del carro y crear promesas para todas las partes
     const { partIds } = await carNFTContract.getCarComposition(carId);
-    console.log('Part IDs for car:', carId, partIds);
 
-    // Obtener los detalles de todas las partes en paralelo
     const parts = await Promise.all(partIds.map(async (partId: bigint) => {
       const stats = await carPartContract.getPartStats(partId);
       
-      // Mapear los stats según el tipo de parte
       const mappedStats = {
         partId: partId.toString(),
         partType: Number(stats.partType),
@@ -370,7 +345,6 @@ export async function getCarParts(carId: string): Promise<any[]> {
         stats: {}
       };
 
-      // Asignar los stats según el tipo de parte
       switch(Number(stats.partType)) {
         case 0: // ENGINE
           mappedStats.stats = {
@@ -398,10 +372,8 @@ export async function getCarParts(carId: string): Promise<any[]> {
       return mappedStats;
     }));
 
-    console.log('Parts loaded:', parts);
     return parts;
   } catch (error) {
-    console.error('Error getting car parts:', error);
     throw error;
   }
 }

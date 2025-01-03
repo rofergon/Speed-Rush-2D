@@ -15,11 +15,7 @@ export interface Part {
 export interface Car {
   id: string;
   carImageURI: string;
-  owner?: string;
-  condition?: number;
-  price?: number;
-  seller?: string;
-  listedAt?: number;
+  displayImageURI?: string;
   combinedStats: {
     speed: number;
     acceleration: number;
@@ -29,4 +25,8 @@ export interface Car {
     maxSpeed: number;
   };
   parts: Part[];
+  price?: number;
+  seller?: string;
+  condition?: number;
+  listedAt?: number;
 } 
