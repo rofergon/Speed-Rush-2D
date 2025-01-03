@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
 import { GameInfo } from '../components/GameInfo';
+import { MintCarButton } from '../components/MintCarButton';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ export function HomePage() {
                       <Car className="w-5 h-5" />
                       <span>Marketplace</span>
                     </button>
+                    <MintCarButton />
                   </div>
                 </>
               )}

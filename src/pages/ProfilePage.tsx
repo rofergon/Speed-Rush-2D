@@ -5,6 +5,7 @@ import { ConnectKitButton } from 'connectkit';
 import { CarGallery } from '../components/CarGallery';
 import { Header } from '../components/Header';
 import { Background } from '../components/Background';
+import { MintCarButton } from '../components/MintCarButton';
 
 export function ProfilePage() {
   const { isConnected } = useAccount();
@@ -32,6 +33,11 @@ export function ProfilePage() {
         <div className="w-full px-6 py-8">
           {/* Header con Wallet */}
           <Header />
+
+          {/* Mint Button */}
+          <div className="w-full flex justify-center my-6">
+            <MintCarButton />
+          </div>
 
           {/* Cars Grid */}
           <div className="w-full">
