@@ -5,10 +5,12 @@ import { ConnectKitButton } from 'connectkit';
 import { CarGallery } from '../components/CarGallery';
 import { Background } from '../components/Background';
 import { MintCarButton } from '../components/MintCarButton';
+import { MintPriceDebug } from '../components/MintPriceDebug';
 import { PartsInventory } from '../components/PartsInventory';
-import { Gamepad2, Car as CarIcon, Wrench, RefreshCw, Grid } from 'lucide-react';
-import { activeCarService } from '../services/activeCarService';
-import { partsService, type Part } from '../services/partsService';
+import { Gamepad2, Car as CarIcon, Wrench, RefreshCw } from 'lucide-react';
+import { Part } from '../types/parts';
+import { partsService } from '../services/partsService';
+import { web3Service } from '../services/web3Service';
 
 export function ProfilePage() {
   const { isConnected, address } = useAccount();
@@ -23,19 +25,17 @@ export function ProfilePage() {
     setIsAlternativeSkin(newSkinState);
   };
 
-  // Load user parts
   useEffect(() => {
     const loadParts = async () => {
       if (!address) return;
-      
       try {
         setIsLoadingParts(true);
         setError(null);
         const userParts = await partsService.getUserParts(address);
         setParts(userParts);
-      } catch (err) {
-        console.error('Error loading parts:', err);
-        setError('Error loading parts. Please try again.');
+      } catch (error) {
+        console.error('Error loading parts:', error);
+        setError('Error cargando las partes. Por favor intenta de nuevo.');
       } finally {
         setIsLoadingParts(false);
       }
@@ -46,31 +46,49 @@ export function ProfilePage() {
     }
   }, [isConnected, address]);
 
-  const handleEquipPart = async (partId: string, carId: string) => {
+  const handleCarSelect = async (car: { id: string; parts: Part[] }) => {
+    setSelectedCar(car);
+  };
+
+  const handleEquipPart = async (partId: string, carId: string, slotIndex: number) => {
     try {
       setError(null);
-      await partsService.equipPart(partId, carId);
+      await web3Service.equipPart(carId, partId, slotIndex);
       if (address) {
-        const updatedParts = await partsService.getUserParts(address);
-        setParts(updatedParts);
+        const userParts = await partsService.getUserParts(address);
+        setParts(userParts);
+        if (selectedCar) {
+          const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
+          setSelectedCar({
+            ...selectedCar,
+            parts: updatedCarParts
+          });
+        }
       }
-    } catch (err) {
-      console.error('Error equipping part:', err);
-      setError('Error equipping part. Please try again.');
+    } catch (error) {
+      console.error('Error equipando parte:', error);
+      setError('Error al equipar la parte. Por favor intenta de nuevo.');
     }
   };
 
   const handleUnequipPart = async (partId: string, carId: string) => {
     try {
       setError(null);
-      await partsService.unequipPart(partId, carId);
+      await web3Service.unequipPart(carId, partId);
       if (address) {
-        const updatedParts = await partsService.getUserParts(address);
-        setParts(updatedParts);
+        const userParts = await partsService.getUserParts(address);
+        setParts(userParts);
+        if (selectedCar) {
+          const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
+          setSelectedCar({
+            ...selectedCar,
+            parts: updatedCarParts
+          });
+        }
       }
-    } catch (err) {
-      console.error('Error unequipping part:', err);
-      setError('Error unequipping part. Please try again.');
+    } catch (error) {
+      console.error('Error desequipando parte:', error);
+      setError('Error al desequipar la parte. Por favor intenta de nuevo.');
     }
   };
 
@@ -110,8 +128,8 @@ export function ProfilePage() {
         <div className="max-w-[98%] mx-auto px-4 py-8">
           {!isConnected ? (
             <div className="text-center py-20">
-              <h2 className="text-2xl font-bold mb-4">Connect Your Wallet to View Your Garage</h2>
-              <p className="text-gray-400 mb-8">You need to connect your wallet to view and manage your vehicles</p>
+              <h2 className="text-2xl font-bold mb-4">Conecta tu Wallet para Ver tu Garage</h2>
+              <p className="text-gray-400 mb-8">Necesitas conectar tu wallet para ver y administrar tus vehículos</p>
               <ConnectKitButton />
             </div>
           ) : (
@@ -149,11 +167,20 @@ export function ProfilePage() {
                 </button>
               </div>
 
+              {error && (
+                <div className="bg-red-500 text-white p-4 rounded-lg mb-6">
+                  {error}
+                </div>
+              )}
+
               {/* Tab Content */}
               {activeTab === 'cars' ? (
                 <div>
                   <div className="flex justify-between items-center mb-6">
-                    <MintCarButton />
+                    <div className="flex gap-4">
+                      <MintCarButton />
+                      <MintPriceDebug />
+                    </div>
                     <button
                       onClick={() => handleSkinChange(!isAlternativeSkin)}
                       className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -165,15 +192,19 @@ export function ProfilePage() {
                   <CarGallery 
                     alternativeSkin={isAlternativeSkin} 
                     onSkinChange={handleSkinChange}
+                    onSelectCar={handleCarSelect}
                   />
                 </div>
               ) : (
-                <PartsInventory
-                  parts={parts}
-                  selectedCar={selectedCar}
-                  onEquipPart={handleEquipPart}
-                  onUnequipPart={handleUnequipPart}
-                />
+                <div className="bg-gray-800 rounded-lg p-6">
+                  <PartsInventory
+                    parts={parts}
+                    selectedCar={selectedCar}
+                    onEquipPart={handleEquipPart}
+                    onUnequipPart={handleUnequipPart}
+                    isLoading={isLoadingParts}
+                  />
+                </div>
               )}
             </>
           )}
