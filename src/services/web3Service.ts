@@ -501,63 +501,6 @@ export async function mintCar(
   }
 }
 
-// Agregar esta función de ayuda para calcular stats
-function calculateCombinedStats(parts: any[]) {
-  let totalSpeed = 0;
-  let totalAcceleration = 0;
-  let totalHandling = 0;
-  let totalDriftFactor = 0;
-  let totalTurnFactor = 0;
-  let totalMaxSpeed = 0;
-
-  let speedContributors = 0;
-  let accelerationContributors = 0;
-  let handlingContributors = 0;
-  let driftContributors = 0;
-  let turnContributors = 0;
-  let maxSpeedContributors = 0;
-
-  parts.forEach(part => {
-    if (!part) return;
-    
-    const stats = part.stats;
-    if (stats.speed) {
-      totalSpeed += stats.speed;
-      speedContributors++;
-    }
-    if (stats.acceleration) {
-      totalAcceleration += stats.acceleration;
-      accelerationContributors++;
-    }
-    if (stats.handling) {
-      totalHandling += stats.handling;
-      handlingContributors++;
-    }
-    if (stats.driftFactor) {
-      totalDriftFactor += stats.driftFactor;
-      driftContributors++;
-    }
-    if (stats.turnFactor) {
-      totalTurnFactor += stats.turnFactor;
-      turnContributors++;
-    }
-    if (stats.maxSpeed) {
-      totalMaxSpeed += stats.maxSpeed;
-      maxSpeedContributors++;
-    }
-  });
-
-  // Calcular promedios, evitando división por cero
-  return {
-    speed: speedContributors > 0 ? Math.floor(totalSpeed / speedContributors) : 0,
-    acceleration: accelerationContributors > 0 ? Math.floor(totalAcceleration / accelerationContributors) : 0,
-    handling: handlingContributors > 0 ? Math.floor(totalHandling / handlingContributors) : 0,
-    driftFactor: driftContributors > 0 ? Math.floor(totalDriftFactor / driftContributors) : 0,
-    turnFactor: turnContributors > 0 ? Math.floor(totalTurnFactor / turnContributors) : 0,
-    maxSpeed: maxSpeedContributors > 0 ? Math.floor(totalMaxSpeed / maxSpeedContributors) : 0
-  };
-}
-
 export async function getUserCars(address: string): Promise<any[]> {
   try {
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -658,19 +601,25 @@ export async function getUserCars(address: string): Promise<any[]> {
         // Filtrar las partes nulas (slots no ocupados o con error)
         const validParts = parts.filter(part => part !== null);
 
-        // Intentar obtener la metadata completa, si falla, calcular stats manualmente
+        // Intentar obtener la metadata completa, si falla, usar valores por defecto
         let metadata;
         try {
           metadata = await carNFTContract.getFullCarMetadata(carId);
         } catch (error) {
-          console.log('Error al obtener metadata completa, calculando stats manualmente');
-          const calculatedStats = calculateCombinedStats(validParts);
+          console.log('Error al obtener metadata completa, usando valores por defecto');
           metadata = {
             carId,
             owner: address,
             carImageURI,
             condition: 100,
-            combinedStats: calculatedStats
+            combinedStats: {
+              speed: 0,
+              acceleration: 0,
+              handling: 0,
+              driftFactor: 0,
+              turnFactor: 0,
+              maxSpeed: 0
+            }
           };
         }
 
