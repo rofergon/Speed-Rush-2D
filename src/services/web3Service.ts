@@ -1,385 +1,320 @@
 import { ethers } from 'ethers';
 
-const CarNFTAbi = {
-  abi: [
-    {
-      inputs: [
-        {
-          internalType: "string",
-          name: "carImageURI",
-          type: "string"
-        },
-        {
-          components: [
-            {
-              internalType: "enum CarPart.PartType",
-              name: "partType",
-              type: "uint8"
-            },
-            {
-              internalType: "uint8",
-              name: "stat1",
-              type: "uint8"
-            },
-            {
-              internalType: "uint8",
-              name: "stat2",
-              type: "uint8"
-            },
-            {
-              internalType: "uint8",
-              name: "stat3",
-              type: "uint8"
-            },
-            {
-              internalType: "string",
-              name: "imageURI",
-              type: "string"
-            }
-          ],
-          internalType: "struct CarNFT.PartData[]",
-          name: "partsData",
-          type: "tuple[]"
-        }
-      ],
-      name: "mintCar",
-      outputs: [],
-      stateMutability: "payable",
-      type: "function"
-    },
-    {
-      inputs: [
-        {
-          internalType: "address",
-          name: "owner",
-          type: "address"
-        }
-      ],
-      name: "getCarsByOwner",
-      outputs: [
-        {
-          internalType: "uint256[]",
-          name: "",
-          type: "uint256[]"
-        }
-      ],
-      stateMutability: "view",
-      type: "function"
-    },
-    {
-      inputs: [
-        {
-          internalType: "uint256",
-          name: "carId",
-          type: "uint256"
-        }
-      ],
-      name: "getFullCarMetadata",
-      outputs: [
-        {
-          components: [
-            {
-              internalType: "uint256",
-              name: "carId",
-              type: "uint256"
-            },
-            {
-              internalType: "address",
-              name: "owner",
-              type: "address"
-            },
-            {
-              internalType: "string",
-              name: "carImageURI",
-              type: "string"
-            },
-            {
-              internalType: "uint8",
-              name: "condition",
-              type: "uint8"
-            },
-            {
-              components: [
-                {
-                  internalType: "uint8",
-                  name: "speed",
-                  type: "uint8"
-                },
-                {
-                  internalType: "uint8",
-                  name: "acceleration",
-                  type: "uint8"
-                },
-                {
-                  internalType: "uint8",
-                  name: "handling",
-                  type: "uint8"
-                },
-                {
-                  internalType: "uint8",
-                  name: "driftFactor",
-                  type: "uint8"
-                },
-                {
-                  internalType: "uint8",
-                  name: "turnFactor",
-                  type: "uint8"
-                },
-                {
-                  internalType: "uint8",
-                  name: "maxSpeed",
-                  type: "uint8"
-                }
-              ],
-              internalType: "struct CarNFT.CarStats",
-              name: "combinedStats",
-              type: "tuple"
-            }
-          ],
-          internalType: "struct CarNFT.FullCarMetadata",
-          name: "",
-          type: "tuple"
-        }
-      ],
-      stateMutability: "view",
-      type: "function"
-    },
-    {
-      inputs: [
-        {
-          internalType: "uint256",
-          name: "carId",
-          type: "uint256"
-        }
-      ],
-      name: "getCarComposition",
-      outputs: [
-        {
-          internalType: "uint256[]",
-          name: "partIds",
-          type: "uint256[]"
-        },
-        {
-          internalType: "string",
-          name: "carImageURI",
-          type: "string"
-        }
-      ],
-      stateMutability: "view",
-      type: "function"
-    }
-  ]
-};
+interface PartData {
+  partType: number;
+  stat1: number;
+  stat2: number;
+  stat3: number;
+  imageURI: string;
+}
 
-const CarPartAbi = {
-  abi: [
-    {
-      inputs: [
-        {
-          internalType: "uint256",
-          name: "partId",
-          type: "uint256"
-        }
-      ],
-      name: "getPartStats",
-      outputs: [
-        {
-          components: [
-            {
-              internalType: "enum CarPart.PartType",
-              name: "partType",
-              type: "uint8"
-            },
-            {
-              internalType: "uint8",
-              name: "stat1",
-              type: "uint8"
-            },
-            {
-              internalType: "uint8",
-              name: "stat2",
-              type: "uint8"
-            },
-            {
-              internalType: "uint8",
-              name: "stat3",
-              type: "uint8"
-            },
-            {
-              internalType: "string",
-              name: "imageURI",
-              type: "string"
-            }
-          ],
-          internalType: "struct CarPart.PartStats",
-          name: "",
-          type: "tuple"
-        }
-      ],
-      stateMutability: "view",
-      type: "function"
-    }
-  ]
-};
-
-export interface CarGenerationData {
+interface CarGenerationData {
   carImageURI: string;
-  parts: {
-    partType: number;
-    stat1: number;
-    stat2: number;
-    stat3: number;
-    imageURI: string;
-  }[];
+  parts: PartData[];
 }
 
-export async function mintCar(
-  address: string,
-  carData: CarGenerationData,
-  mintPrice: string
-): Promise<string> {
-  try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const carNFTContract = new ethers.Contract(
-      import.meta.env.VITE_CAR_NFT_ADDRESS,
-      CarNFTAbi.abi,
-      signer
-    );
+class Web3Service {
+  private provider: ethers.BrowserProvider;
+  private carNFTContract: ethers.Contract | null = null;
+  private carPartContract: ethers.Contract | null = null;
 
-    const mintPriceWei = ethers.parseEther(mintPrice);
-    const partsData = carData.parts.map(part => ({
-      partType: part.partType,
-      stat1: part.stat1,
-      stat2: part.stat2,
-      stat3: part.stat3,
-      imageURI: part.imageURI
-    }));
-
-    const tx = await carNFTContract.mintCar(
-      carData.carImageURI,
-      partsData,
-      { value: mintPriceWei }
-    );
-
-    return tx.hash;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function getUserCars(address: string): Promise<any[]> {
-  try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const carNFTContract = new ethers.Contract(
-      import.meta.env.VITE_CAR_NFT_ADDRESS,
-      CarNFTAbi.abi,
-      signer
-    );
-
-    const carIds = await carNFTContract.getCarsByOwner(address);
-    const carIdsArray = Array.from(carIds, (id: any) => BigInt(id.toString()));
-
-    const carPromises = carIdsArray.map(async (carId) => {
-      try {
-        const [metadata, parts] = await Promise.all([
-          carNFTContract.getFullCarMetadata(carId),
-          getCarParts(carId.toString())
-        ]);
-
-        return {
-          id: carId.toString(),
-          carImageURI: metadata.carImageURI,
-          owner: metadata.owner,
-          condition: Number(metadata.condition),
-          combinedStats: {
-            speed: Number(metadata.combinedStats.speed) || 0,
-            acceleration: Number(metadata.combinedStats.acceleration) || 0,
-            handling: Number(metadata.combinedStats.handling) || 0,
-            driftFactor: Number(metadata.combinedStats.driftFactor) || 0,
-            turnFactor: Number(metadata.combinedStats.turnFactor) || 0,
-            maxSpeed: Number(metadata.combinedStats.maxSpeed) || 0
-          },
-          parts: parts
-        };
-      } catch {
-        return null;
-      }
+  constructor() {
+    this.provider = new ethers.BrowserProvider(window.ethereum);
+    console.log('Contract addresses:', {
+      carNFT: import.meta.env.VITE_CAR_NFT_ADDRESS,
+      carPart: import.meta.env.VITE_CAR_PART_ADDRESS
     });
-
-    const cars = await Promise.all(carPromises);
-    const validCars = cars.filter(car => car !== null);
-    return validCars;
-  } catch (error) {
-    throw error;
   }
-}
 
-export async function getCarParts(carId: string): Promise<any[]> {
-  try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    
-    const carNFTContract = new ethers.Contract(
-      import.meta.env.VITE_CAR_NFT_ADDRESS,
-      CarNFTAbi.abi,
-      signer
-    );
-    
-    const carPartContract = new ethers.Contract(
-      import.meta.env.VITE_CAR_PART_ADDRESS,
-      CarPartAbi.abi,
-      signer
-    );
+  private async getCarNFTContract(): Promise<ethers.Contract> {
+    if (!this.carNFTContract) {
+      const signer = await this.provider.getSigner();
+      const address = import.meta.env.VITE_CAR_NFT_ADDRESS;
+      console.log('Creating CarNFT contract with address:', address);
+      if (!address) {
+        throw new Error('CarNFT contract address not found in environment variables');
+      }
+      this.carNFTContract = new ethers.Contract(
+        import.meta.env.VITE_CAR_NFT_ADDRESS,
+        [
+          "function mintPrice() view returns (uint256)",
+          "function mintCar(string memory carImageURI, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] memory partsData) payable",
+          "function setMintPrice(uint256 _newPrice)",
+          "function balanceOf(address owner) view returns (uint256)",
+          "function ownerOf(uint256 tokenId) view returns (address)",
+          "function getCarsByOwner(address owner) view returns (uint256[])",
+          "function getCarComposition(uint256 carId) view returns (uint256[] partIds, string carImageURI, bool[] slotOccupied)",
+          "function getFullCarMetadata(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats))",
+          "function equipPart(uint256 carId, uint256 partId, uint8 slotIndex)",
+          "function unequipPart(uint256 carId, uint256 partId)",
+          "function getLastTokenId() view returns (uint256)"
+        ],
+        signer
+      );
+    }
+    return this.carNFTContract;
+  }
 
-    const { partIds } = await carNFTContract.getCarComposition(carId);
+  public async getCarPartContract(): Promise<ethers.Contract> {
+    if (!this.carPartContract) {
+      const signer = await this.provider.getSigner();
+      this.carPartContract = new ethers.Contract(
+        import.meta.env.VITE_CAR_PART_ADDRESS,
+        [
+          "function getPartStats(uint256 partId) view returns (tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI))",
+          "function isEquipped(uint256 partId) view returns (bool)",
+          "function getEquippedCar(uint256 partId) view returns (uint256)",
+          "function exists(uint256 partId) view returns (bool)",
+          "function ownerOf(uint256 tokenId) view returns (address)",
+          "function balanceOf(address owner) view returns (uint256)",
+          "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)"
+        ],
+        signer
+      );
+    }
+    return this.carPartContract;
+  }
 
-    const parts = await Promise.all(partIds.map(async (partId: bigint) => {
-      const stats = await carPartContract.getPartStats(partId);
+  async getMintPrice(): Promise<bigint> {
+    try {
+      const contract = await this.getCarNFTContract();
+      const price = await contract.mintPrice();
+      return price;
+    } catch (error) {
+      console.error('Error getting mint price:', error);
+      throw error;
+    }
+  }
+
+  async setMintPrice(newPrice: bigint): Promise<void> {
+    try {
+      const contract = await this.getCarNFTContract();
+      const tx = await contract.setMintPrice(newPrice);
+      await tx.wait();
+    } catch (error) {
+      console.error('Error setting mint price:', error);
+      throw error;
+    }
+  }
+
+  async mintCar(address: string, carData: CarGenerationData, mintPriceWei: string): Promise<string> {
+    try {
+      const contract = await this.getCarNFTContract();
+      const tx = await contract.mintCar(carData.carImageURI, carData.parts, {
+        value: mintPriceWei
+      });
+      await tx.wait();
+      return tx.hash;
+    } catch (error) {
+      console.error('Error minting car:', error);
+      throw error;
+    }
+  }
+
+  async getUserCars(address: string): Promise<any[]> {
+    try {
+      const contract = await this.getCarNFTContract();
+      const carPartContract = await this.getCarPartContract();
       
-      const mappedStats = {
-        partId: partId.toString(),
-        partType: Number(stats.partType),
-        imageURI: stats.imageURI,
-        stats: {}
-      };
+      // Obtener el balance de NFTs del usuario
+      const balance = await contract.balanceOf(address);
+      console.log('Balance de NFTs:', balance.toString());
 
-      switch(Number(stats.partType)) {
-        case 0: // ENGINE
-          mappedStats.stats = {
-            speed: Number(stats.stat1),
-            maxSpeed: Number(stats.stat2),
-            acceleration: Number(stats.stat3)
-          };
-          break;
-        case 1: // TRANSMISSION
-          mappedStats.stats = {
-            acceleration: Number(stats.stat1),
-            speed: Number(stats.stat2),
-            handling: Number(stats.stat3)
-          };
-          break;
-        case 2: // WHEELS
-          mappedStats.stats = {
-            handling: Number(stats.stat1),
-            driftFactor: Number(stats.stat2),
-            turnFactor: Number(stats.stat3)
-          };
-          break;
+      if (balance === 0n) {
+        console.log('El usuario no tiene carros');
+        return [];
       }
 
-      return mappedStats;
-    }));
+      // Obtener el último ID de token
+      const lastTokenId = await contract.getLastTokenId();
+      console.log('Último ID de token:', lastTokenId.toString());
 
-    return parts;
-  } catch (error) {
-    throw error;
+      // Buscar todos los tokens del usuario
+      const carIds = [];
+      for (let i = 1n; i <= lastTokenId; i++) {
+        try {
+          const owner = await contract.ownerOf(i);
+          if (owner.toLowerCase() === address.toLowerCase()) {
+            carIds.push(i);
+          }
+        } catch (error) {
+          // Si el token no existe o fue quemado, continuamos con el siguiente
+          continue;
+        }
+      }
+
+      console.log('IDs de carros encontrados:', carIds);
+      
+      // Obtener detalles de cada carro
+      const cars = await Promise.all(carIds.map(async (carId: bigint) => {
+        try {
+          console.log(`\nObteniendo detalles del carro ${carId.toString()}:`);
+          
+          // Obtener composición del carro
+          const [partIds, carImageURI, slotOccupied] = await contract.getCarComposition(carId);
+          console.log('Composición del carro:');
+          console.log('- Parts IDs:', partIds.map((id: bigint) => id.toString()));
+          console.log('- Slots ocupados:', slotOccupied);
+          
+          // Obtener detalles de las partes
+          console.log('\nDetalles de las partes:');
+          const parts = await Promise.all(partIds.map(async (partId: bigint, index: number) => {
+            if (!slotOccupied[index]) {
+              console.log(`Slot ${index}: Vacío`);
+              return null;
+            }
+            
+            const partStats = await carPartContract.getPartStats(partId);
+            const isEquipped = await carPartContract.isEquipped(partId);
+            const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(partId) : null;
+            
+            console.log(`\nParte ${partId.toString()} (Slot ${index}):`);
+            console.log('- Tipo:', partStats.partType);
+            console.log('- Stats:', {
+              stat1: Number(partStats.stat1),
+              stat2: Number(partStats.stat2),
+              stat3: Number(partStats.stat3)
+            });
+            console.log('- Equipada:', isEquipped);
+            if (isEquipped) console.log('- Equipada en carro:', equippedToCarId?.toString());
+            
+            return {
+              partId: partId.toString(),
+              partType: Number(partStats.partType),
+              imageURI: partStats.imageURI,
+              stats: this.mapPartStats(partStats),
+              isEquipped,
+              equippedToCarId: equippedToCarId?.toString()
+            };
+          }));
+
+          // Obtener metadata completa
+          console.log('\nObteniendo metadata completa...');
+          const metadata = await contract.getFullCarMetadata(carId);
+          console.log('Metadata del carro:');
+          console.log('- Condición:', Number(metadata.condition));
+          console.log('- Stats combinados:', {
+            speed: Number(metadata.combinedStats.speed),
+            acceleration: Number(metadata.combinedStats.acceleration),
+            handling: Number(metadata.combinedStats.handling),
+            driftFactor: Number(metadata.combinedStats.driftFactor),
+            turnFactor: Number(metadata.combinedStats.turnFactor),
+            maxSpeed: Number(metadata.combinedStats.maxSpeed)
+          });
+
+          return {
+            id: carId.toString(),
+            carImageURI,
+            owner: metadata.owner,
+            condition: Number(metadata.condition),
+            combinedStats: {
+              speed: Number(metadata.combinedStats.speed),
+              acceleration: Number(metadata.combinedStats.acceleration),
+              handling: Number(metadata.combinedStats.handling),
+              driftFactor: Number(metadata.combinedStats.driftFactor),
+              turnFactor: Number(metadata.combinedStats.turnFactor),
+              maxSpeed: Number(metadata.combinedStats.maxSpeed)
+            },
+            parts: parts.filter(part => part !== null)
+          };
+        } catch (error) {
+          console.error('Error al obtener detalles del carro:', carId.toString(), error);
+          if (error instanceof Error) {
+            console.log('Mensaje de error:', error.message);
+            console.log('Stack:', error.stack);
+          }
+          return null;
+        }
+      }));
+
+      return cars.filter(car => car !== null);
+    } catch (error) {
+      console.error('Error getting user cars:', error);
+      throw error;
+    }
+  }
+
+  private mapPartStats(stats: any) {
+    switch(Number(stats.partType)) {
+      case 0: // ENGINE
+        return {
+          speed: Number(stats.stat1),
+          maxSpeed: Number(stats.stat2),
+          acceleration: Number(stats.stat3)
+        };
+      case 1: // TRANSMISSION
+        return {
+          acceleration: Number(stats.stat1),
+          speed: Number(stats.stat2),
+          handling: Number(stats.stat3)
+        };
+      case 2: // WHEELS/CORE
+        return {
+          handling: Number(stats.stat1),
+          driftFactor: Number(stats.stat2),
+          turnFactor: Number(stats.stat3)
+        };
+      default:
+        return {};
+    }
+  }
+
+  async equipPart(carId: string, partId: string, slotIndex: number): Promise<void> {
+    try {
+      const contract = await this.getCarNFTContract();
+      const tx = await contract.equipPart(carId, partId, slotIndex);
+      await tx.wait();
+    } catch (error) {
+      console.error('Error equipping part:', error);
+      throw error;
+    }
+  }
+
+  async unequipPart(carId: string, partId: string): Promise<void> {
+    try {
+      const contract = await this.getCarNFTContract();
+      const tx = await contract.unequipPart(carId, partId);
+      await tx.wait();
+    } catch (error) {
+      console.error('Error unequipping part:', error);
+      throw error;
+    }
+  }
+
+  public async getBalance(address: string): Promise<bigint> {
+    return await this.provider.getBalance(address);
+  }
+
+  public async getCarParts(carId: string): Promise<any[]> {
+    try {
+      const contract = await this.getCarNFTContract();
+      const carPartContract = await this.getCarPartContract();
+      const [partIds, , slotOccupied] = await contract.getCarComposition(carId);
+      
+      // Obtener detalles de las partes
+      const parts = await Promise.all(partIds.map(async (partId: bigint, index: number) => {
+        if (!slotOccupied[index]) return null;
+        
+        const partStats = await carPartContract.getPartStats(partId);
+        const isEquipped = await carPartContract.isEquipped(partId);
+        const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(partId) : null;
+        
+        return {
+          partId: partId.toString(),
+          partType: Number(partStats.partType),
+          imageURI: partStats.imageURI,
+          stats: this.mapPartStats(partStats),
+          isEquipped,
+          equippedToCarId: equippedToCarId?.toString()
+        };
+      }));
+
+      return parts.filter(part => part !== null);
+    } catch (error) {
+      console.error('Error getting car parts:', error);
+      throw error;
+    }
   }
 }
 
-export const web3Service = {
-  mintCar,
-  getUserCars,
-  getCarParts
-}; 
+export const web3Service = new Web3Service(); 

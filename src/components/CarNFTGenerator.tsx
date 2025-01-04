@@ -167,13 +167,13 @@ export function CarNFTGenerator() {
 
     const stats = nftData.stats;
     const statsList = [
-      { key: 'speed', label: 'Velocidad', value: stats.speed },
-      { key: 'acceleration', label: 'Aceleración', value: stats.acceleration },
-      { key: 'handling', label: 'Manejo', value: stats.handling },
+      { key: 'speed', label: 'Speed', value: stats.speed },
+      { key: 'acceleration', label: 'Acceleration', value: stats.acceleration },
+      { key: 'handling', label: 'Handling', value: stats.handling },
       { key: 'driftFactor', label: 'Drift', value: stats.driftFactor },
-      { key: 'turnFactor', label: 'Giro', value: stats.turnFactor },
-      { key: 'maxSpeed', label: 'Vel. Máx', value: stats.maxSpeed },
-      { key: 'condition', label: 'Condición', value: stats.condition }
+      { key: 'turnFactor', label: 'Turn', value: stats.turnFactor },
+      { key: 'maxSpeed', label: 'Max Speed', value: stats.maxSpeed },
+      { key: 'condition', label: 'Condition', value: stats.condition }
     ];
 
     return (
@@ -189,14 +189,14 @@ export function CarNFTGenerator() {
 
         {transactionDetails && (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg space-y-2">
-            <h4 className="font-semibold text-gray-300">Detalles de la Transacción</h4>
+            <h4 className="font-semibold text-gray-300">Transaction Details</h4>
             <div className="text-sm">
               <p>Hash: <span className="text-gray-400">{transactionDetails.hash.slice(0, 10)}...</span></p>
               {transactionDetails.gasUsed && (
-                <p>Gas Usado: <span className="text-gray-400">{transactionDetails.gasUsed}</span></p>
+                <p>Gas Used: <span className="text-gray-400">{transactionDetails.gasUsed}</span></p>
               )}
               {transactionDetails.totalCost && (
-                <p>Costo Total: <span className="text-gray-400">{transactionDetails.totalCost} ETH</span></p>
+                <p>Total Cost: <span className="text-gray-400">{transactionDetails.totalCost} ETH</span></p>
               )}
             </div>
           </div>
@@ -210,7 +210,7 @@ export function CarNFTGenerator() {
       <div className="space-y-4 mb-6">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Estilo del Carro
+            Car Style
           </label>
           <select
             value={options.style}
@@ -218,29 +218,29 @@ export function CarNFTGenerator() {
             className="w-full bg-gray-700 text-white rounded-lg px-4 py-2"
           >
             <option value="cartoon">Cartoon</option>
-            <option value="realistic">Realista</option>
+            <option value="realistic">Realistic</option>
             <option value="anime">Anime</option>
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Tipo de Motor
+            Engine Type
           </label>
           <select
             value={options.engineType}
             onChange={(e) => handleOptionChange('engineType', e.target.value)}
             className="w-full bg-gray-700 text-white rounded-lg px-4 py-2"
           >
-            <option value="standard">Estándar</option>
+            <option value="standard">Standard</option>
             <option value="turbo">Turbo</option>
-            <option value="electric">Eléctrico</option>
+            <option value="electric">Electric</option>
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Tipo de Transmisión
+            Transmission Type
           </label>
           <select
             value={options.transmissionType}
@@ -248,14 +248,14 @@ export function CarNFTGenerator() {
             className="w-full bg-gray-700 text-white rounded-lg px-4 py-2"
           >
             <option value="manual">Manual</option>
-            <option value="automatic">Automática</option>
-            <option value="sequential">Secuencial</option>
+            <option value="automatic">Automatic</option>
+            <option value="sequential">Sequential</option>
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Tipo de Ruedas
+            Wheels Type
           </label>
           <select
             value={options.wheelsType}
@@ -270,14 +270,14 @@ export function CarNFTGenerator() {
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Descripción del Carro
+            Car Description
           </label>
           <textarea
             value={options.prompt}
             onChange={(e) => handleOptionChange('prompt', e.target.value)}
             className="w-full bg-gray-700 text-white rounded-lg px-4 py-2"
             rows={3}
-            placeholder="Describe cómo quieres que sea tu carro..."
+            placeholder="Describe how you want your car to look..."
           />
         </div>
       </div>
@@ -287,7 +287,7 @@ export function CarNFTGenerator() {
         disabled={isLoading}
         className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full transform transition hover:scale-105 disabled:opacity-50"
       >
-        {isLoading ? 'Minteando...' : 'Generar Carro NFT'}
+        {isLoading ? 'Minting...' : 'Generate Car NFT'}
       </button>
 
       {error && (
@@ -301,7 +301,7 @@ export function CarNFTGenerator() {
           <div className="bg-gray-800 rounded-lg p-6 max-w-lg w-full">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-white">
-                Carro NFT Generado
+                Car NFT Generated
               </h3>
               <button
                 onClick={() => setIsDialogOpen(false)}
@@ -320,7 +320,7 @@ export function CarNFTGenerator() {
             </div>
 
             <div className="text-white">
-              <h4 className="font-bold mb-2">Atributos del Carro</h4>
+              <h4 className="font-bold mb-2">Car Attributes</h4>
               {renderAttributes()}
             </div>
 
@@ -329,13 +329,13 @@ export function CarNFTGenerator() {
                 onClick={handleViewInGarage}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
               >
-                Ver en Garage
+                View in Garage
               </button>
               <button
                 onClick={() => setIsDialogOpen(false)}
                 className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
               >
-                Cerrar
+                Close
               </button>
             </div>
           </div>

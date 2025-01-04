@@ -1,19 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { ConnectKitButton } from 'connectkit';
 import { CarGallery } from '../components/CarGallery';
 import { Background } from '../components/Background';
 import { MintCarButton } from '../components/MintCarButton';
+import { MintPriceDebug } from '../components/MintPriceDebug';
+import { PartsInventory } from '../components/PartsInventory';
 import { Gamepad2, Car as CarIcon, Wrench, RefreshCw } from 'lucide-react';
-import { activeCarService } from '../services/activeCarService';
+import { Part } from '../types/parts';
+import { partsService } from '../services/partsService';
+import { web3Service } from '../services/web3Service';
 
 export function ProfilePage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [isAlternativeSkin, setIsAlternativeSkin] = useState(false);
+  const [activeTab, setActiveTab] = useState<'cars' | 'parts'>('cars');
+  const [parts, setParts] = useState<Part[]>([]);
+  const [selectedCar, setSelectedCar] = useState<{ id: string; parts: Part[] } | undefined>();
+  const [isLoadingParts, setIsLoadingParts] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSkinChange = (newSkinState: boolean) => {
     setIsAlternativeSkin(newSkinState);
+  };
+
+  useEffect(() => {
+    const loadParts = async () => {
+      if (!address) return;
+      try {
+        setIsLoadingParts(true);
+        setError(null);
+        const userParts = await partsService.getUserParts(address);
+        setParts(userParts);
+      } catch (error) {
+        console.error('Error loading parts:', error);
+        setError('Error loading parts. Please try again.');
+      } finally {
+        setIsLoadingParts(false);
+      }
+    };
+
+    if (isConnected) {
+      loadParts();
+    }
+  }, [isConnected, address]);
+
+  const handleCarSelect = async (car: { id: string; parts: Part[] }) => {
+    setSelectedCar(car);
+  };
+
+  const handleEquipPart = async (partId: string, carId: string, slotIndex: number) => {
+    try {
+      setError(null);
+      await web3Service.equipPart(carId, partId, slotIndex);
+      if (address) {
+        const userParts = await partsService.getUserParts(address);
+        setParts(userParts);
+        if (selectedCar) {
+          const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
+          setSelectedCar({
+            ...selectedCar,
+            parts: updatedCarParts
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error equipping part:', error);
+      setError('Error equipping part. Please try again.');
+    }
+  };
+
+  const handleUnequipPart = async (partId: string, carId: string) => {
+    try {
+      setError(null);
+      await web3Service.unequipPart(carId, partId);
+      if (address) {
+        const userParts = await partsService.getUserParts(address);
+        setParts(userParts);
+        if (selectedCar) {
+          const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
+          setSelectedCar({
+            ...selectedCar,
+            parts: updatedCarParts
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error unequipping part:', error);
+      setError('Error unequipping part. Please try again.');
+    }
   };
 
   return (
@@ -64,29 +140,72 @@ export function ProfilePage() {
                     <h1 className="text-3xl font-bold mb-2">My Garage</h1>
                     <p className="text-gray-400">Manage and customize your NFT vehicles</p>
                   </div>
-                  {/* Skin change button */}
-                  <button
-                    onClick={() => handleSkinChange(!isAlternativeSkin)}
-                    className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                    <span>{isAlternativeSkin ? 'Use Main Skin' : 'Use Core Skin'}</span>
-                  </button>
                 </div>
               </div>
 
-              {/* Mint Button */}
-              <div className="w-full flex justify-center my-6">
-                <MintCarButton />
+              {/* Tabs Navigation */}
+              <div className="flex border-b border-gray-700 mb-6">
+                <button
+                  className={`px-6 py-3 font-medium ${
+                    activeTab === 'cars'
+                      ? 'text-red-500 border-b-2 border-red-500'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  onClick={() => setActiveTab('cars')}
+                >
+                  My Cars
+                </button>
+                <button
+                  className={`px-6 py-3 font-medium ${
+                    activeTab === 'parts'
+                      ? 'text-red-500 border-b-2 border-red-500'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  onClick={() => setActiveTab('parts')}
+                >
+                  My Parts
+                </button>
               </div>
 
-              {/* Cars Grid */}
-              <div className="w-full">
-                <CarGallery 
-                  alternativeSkin={isAlternativeSkin} 
-                  onSkinChange={handleSkinChange}
-                />
-              </div>
+              {error && (
+                <div className="bg-red-500 text-white p-4 rounded-lg mb-6">
+                  {error}
+                </div>
+              )}
+
+              {/* Tab Content */}
+              {activeTab === 'cars' ? (
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex gap-4">
+                      <MintCarButton />
+                      <MintPriceDebug />
+                    </div>
+                    <button
+                      onClick={() => handleSkinChange(!isAlternativeSkin)}
+                      className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                    >
+                      <RefreshCw className="w-5 h-5" />
+                      {isAlternativeSkin ? 'Use Main Skin' : 'Use Core Skin'}
+                    </button>
+                  </div>
+                  <CarGallery 
+                    alternativeSkin={isAlternativeSkin} 
+                    onSkinChange={handleSkinChange}
+                    onSelectCar={handleCarSelect}
+                  />
+                </div>
+              ) : (
+                <div className="bg-gray-800 rounded-lg p-6">
+                  <PartsInventory
+                    parts={parts}
+                    selectedCar={selectedCar}
+                    onEquipPart={handleEquipPart}
+                    onUnequipPart={handleUnequipPart}
+                    isLoading={isLoadingParts}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
