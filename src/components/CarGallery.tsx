@@ -3,6 +3,7 @@ import { Grid, Box, Typography, CircularProgress } from '@mui/material';
 import { useAccount } from 'wagmi';
 import { CarCard } from './CarCard';
 import { web3Service } from '../services/web3Service';
+import { partsService } from '../services/partsService';
 
 interface CarGalleryProps {
   alternativeSkin: boolean;
@@ -10,45 +11,81 @@ interface CarGalleryProps {
   onSelectCar?: (car: { id: string; parts: any[] }) => void;
 }
 
-export const CarGallery: React.FC<CarGalleryProps> = ({ 
+export const CarGallery: React.FC<CarGalleryProps> = ({
   alternativeSkin,
   onSkinChange,
   onSelectCar
 }) => {
-  const { address } = useAccount();
-  const [cars, setCars] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cars, setCars] = useState<any[]>([]);
+  const [availableParts, setAvailableParts] = useState<any[]>([]);
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
+  const { address } = useAccount();
+
+  const loadData = async () => {
+    if (!address) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Cargar carros y sus partes
+      const userCars = await web3Service.getUserCars(address);
+      const carsWithParts = await Promise.all(userCars.map(async (car: any) => {
+        const parts = await web3Service.getCarParts(car.id);
+        return {
+          ...car,
+          parts
+        };
+      }));
+      
+      // Cargar todas las partes disponibles
+      const userParts = await partsService.getUserParts(address);
+      
+      setCars(carsWithParts);
+      setAvailableParts(userParts);
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError('Error cargando datos. Por favor intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadCars = async () => {
-      if (!address) return;
-      try {
-        setLoading(true);
-        setError(null);
-        const userCars = await web3Service.getUserCars(address);
-        console.log('Cars loaded:', userCars);
-        setCars(userCars);
-      } catch (error) {
-        console.error('Error loading cars:', error);
-        setError('Error loading cars. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCars();
+    loadData();
   }, [address]);
 
-  const handleCarSelect = async (car: any) => {
+  const handleCarSelect = (car: any) => {
     setSelectedCarId(car.id);
     if (onSelectCar) {
       onSelectCar(car);
     }
   };
 
-  if (loading) {
+  const handleEquipPart = async (partId: string, slotType: number) => {
+    if (!selectedCarId) return;
+    try {
+      await web3Service.equipPart(selectedCarId, partId, slotType);
+      await loadData(); // Recargar datos después de equipar
+    } catch (error) {
+      console.error('Error equipando parte:', error);
+      throw error;
+    }
+  };
+
+  const handleUnequipPart = async (partId: string) => {
+    if (!selectedCarId) return;
+    try {
+      await web3Service.unequipPart(selectedCarId, partId);
+      await loadData(); // Recargar datos después de desequipar
+    } catch (error) {
+      console.error('Error desequipando parte:', error);
+      throw error;
+    }
+  };
+
+  if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
@@ -58,7 +95,7 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
 
   if (error) {
     return (
-      <Box textAlign="center" color="error.main" p={4}>
+      <Box textAlign="center" p={4} color="error.main">
         <Typography variant="h6">{error}</Typography>
       </Box>
     );
@@ -68,7 +105,7 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
     return (
       <Box textAlign="center" p={4}>
         <Typography variant="h6" color="text.secondary">
-          You don't have any cars yet. Mint a new one to get started!
+          No tienes ningún carro aún. ¡Crea uno nuevo para empezar!
         </Typography>
       </Box>
     );
@@ -78,12 +115,6 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
     <Grid container spacing={2}>
       {cars.map((car) => {
         const stats = car.combinedStats || car.stats || {};
-        console.log('Car data:', {
-          id: car.id,
-          carImageURI: car.carImageURI,
-          alternativeImageURI: car.alternativeImageURI,
-          stats
-        });
         return (
           <Grid item xs={12} sm={6} md={3} key={car.id}>
             <CarCard
@@ -97,7 +128,11 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
                 driftFactor: Number(stats.driftFactor) || 0,
                 turnFactor: Number(stats.turnFactor) || 0
               }}
+              parts={car.parts}
+              availableParts={availableParts}
               onSelect={() => handleCarSelect(car)}
+              onEquipPart={handleEquipPart}
+              onUnequipPart={handleUnequipPart}
               isSelected={selectedCarId === car.id}
               alternativeSkin={alternativeSkin}
             />

@@ -25,13 +25,13 @@ interface PartCardProps {
 const getPartTypeLabel = (type: number): string => {
   switch (type) {
     case 0:
-      return 'Motor';
+      return 'Engine';
     case 1:
-      return 'Transmisión';
+      return 'Transmission';
     case 2:
-      return 'Ruedas';
+      return 'Wheels';
     default:
-      return 'Desconocido';
+      return 'Unknown';
   }
 };
 
@@ -100,7 +100,7 @@ export const PartCard: React.FC<PartCardProps> = ({
         <Box
           component="img"
           src={imageURI}
-          alt={`Parte ${partId}`}
+          alt={`Part ${partId}`}
           sx={{
             position: 'absolute',
             top: '50%',
@@ -113,7 +113,7 @@ export const PartCard: React.FC<PartCardProps> = ({
           }}
         />
         <Chip 
-          label={isEquipped ? `Equipado #${equippedToCarId}` : 'No equipado'} 
+          label={isEquipped ? `Equipped #${equippedToCarId}` : 'Unequipped'} 
           color={isEquipped ? "success" : "default"}
           size="small"
           sx={{
@@ -159,25 +159,25 @@ export const PartCard: React.FC<PartCardProps> = ({
         </Box>
 
         <Box className="space-y-1.5 mb-4">
-          {partType === 0 && ( // Motor
+          {partType === 0 && ( // Engine
             <>
-              <StatDisplay label="Velocidad" value={stats.speed} icon={<SpeedIcon />} />
-              <StatDisplay label="Velocidad Máxima" value={stats.maxSpeed} icon={<DirectionsCarIcon />} />
-              <StatDisplay label="Aceleración" value={stats.acceleration} icon={<RocketLaunchIcon />} />
+              <StatDisplay label="Speed" value={stats.speed} icon={<SpeedIcon />} />
+              <StatDisplay label="Max Speed" value={stats.maxSpeed} icon={<DirectionsCarIcon />} />
+              <StatDisplay label="Acceleration" value={stats.acceleration} icon={<RocketLaunchIcon />} />
             </>
           )}
-          {partType === 1 && ( // Transmisión
+          {partType === 1 && ( // Transmission
             <>
-              <StatDisplay label="Aceleración" value={stats.acceleration} icon={<RocketLaunchIcon />} />
-              <StatDisplay label="Velocidad" value={stats.speed} icon={<SpeedIcon />} />
-              <StatDisplay label="Manejo" value={stats.handling} icon={<TuneIcon />} />
+              <StatDisplay label="Acceleration" value={stats.acceleration} icon={<RocketLaunchIcon />} />
+              <StatDisplay label="Speed" value={stats.speed} icon={<SpeedIcon />} />
+              <StatDisplay label="Handling" value={stats.handling} icon={<TuneIcon />} />
             </>
           )}
-          {partType === 2 && ( // Ruedas
+          {partType === 2 && ( // Wheels
             <>
-              <StatDisplay label="Manejo" value={stats.handling} icon={<TuneIcon />} />
-              <StatDisplay label="Factor de Derrape" value={stats.driftFactor} icon={<CompareArrowsIcon />} />
-              <StatDisplay label="Factor de Giro" value={stats.turnFactor} icon={<TurnSlightRightIcon />} />
+              <StatDisplay label="Handling" value={stats.handling} icon={<TuneIcon />} />
+              <StatDisplay label="Drift Factor" value={stats.driftFactor} icon={<CompareArrowsIcon />} />
+              <StatDisplay label="Turn Factor" value={stats.turnFactor} icon={<TurnSlightRightIcon />} />
             </>
           )}
         </Box>
@@ -197,7 +197,7 @@ export const PartCard: React.FC<PartCardProps> = ({
                 boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)'
               }}
             >
-              Equipar
+              Equip
             </Button>
           )}
           {isEquipped && onUnequip && (
@@ -217,7 +217,7 @@ export const PartCard: React.FC<PartCardProps> = ({
                 }
               }}
             >
-              Desequipar
+              Unequip
             </Button>
           )}
         </Box>

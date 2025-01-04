@@ -55,7 +55,7 @@ class Web3Service {
     return this.carNFTContract;
   }
 
-  private async getCarPartContract(): Promise<ethers.Contract> {
+  public async getCarPartContract(): Promise<ethers.Contract> {
     if (!this.carPartContract) {
       const signer = await this.provider.getSigner();
       this.carPartContract = new ethers.Contract(
@@ -63,7 +63,11 @@ class Web3Service {
         [
           "function getPartStats(uint256 partId) view returns (tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI))",
           "function isEquipped(uint256 partId) view returns (bool)",
-          "function getEquippedCar(uint256 partId) view returns (uint256)"
+          "function getEquippedCar(uint256 partId) view returns (uint256)",
+          "function exists(uint256 partId) view returns (bool)",
+          "function ownerOf(uint256 tokenId) view returns (address)",
+          "function balanceOf(address owner) view returns (uint256)",
+          "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)"
         ],
         signer
       );

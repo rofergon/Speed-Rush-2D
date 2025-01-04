@@ -35,7 +35,7 @@ export function ProfilePage() {
         setParts(userParts);
       } catch (error) {
         console.error('Error loading parts:', error);
-        setError('Error cargando las partes. Por favor intenta de nuevo.');
+        setError('Error loading parts. Please try again.');
       } finally {
         setIsLoadingParts(false);
       }
@@ -66,8 +66,8 @@ export function ProfilePage() {
         }
       }
     } catch (error) {
-      console.error('Error equipando parte:', error);
-      setError('Error al equipar la parte. Por favor intenta de nuevo.');
+      console.error('Error equipping part:', error);
+      setError('Error equipping part. Please try again.');
     }
   };
 
@@ -87,8 +87,8 @@ export function ProfilePage() {
         }
       }
     } catch (error) {
-      console.error('Error desequipando parte:', error);
-      setError('Error al desequipar la parte. Por favor intenta de nuevo.');
+      console.error('Error unequipping part:', error);
+      setError('Error unequipping part. Please try again.');
     }
   };
 
@@ -128,8 +128,8 @@ export function ProfilePage() {
         <div className="max-w-[98%] mx-auto px-4 py-8">
           {!isConnected ? (
             <div className="text-center py-20">
-              <h2 className="text-2xl font-bold mb-4">Conecta tu Wallet para Ver tu Garage</h2>
-              <p className="text-gray-400 mb-8">Necesitas conectar tu wallet para ver y administrar tus vehículos</p>
+              <h2 className="text-2xl font-bold mb-4">Connect Your Wallet to View Your Garage</h2>
+              <p className="text-gray-400 mb-8">You need to connect your wallet to view and manage your vehicles</p>
               <ConnectKitButton />
             </div>
           ) : (
@@ -137,8 +137,8 @@ export function ProfilePage() {
               <div className="mb-8">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h1 className="text-3xl font-bold mb-2">Mi Garage</h1>
-                    <p className="text-gray-400">Administra y personaliza tus vehículos NFT</p>
+                    <h1 className="text-3xl font-bold mb-2">My Garage</h1>
+                    <p className="text-gray-400">Manage and customize your NFT vehicles</p>
                   </div>
                 </div>
               </div>
@@ -153,7 +153,7 @@ export function ProfilePage() {
                   }`}
                   onClick={() => setActiveTab('cars')}
                 >
-                  Mis Carros
+                  My Cars
                 </button>
                 <button
                   className={`px-6 py-3 font-medium ${
@@ -163,7 +163,7 @@ export function ProfilePage() {
                   }`}
                   onClick={() => setActiveTab('parts')}
                 >
-                  Mis Partes
+                  My Parts
                 </button>
               </div>
 
@@ -186,7 +186,7 @@ export function ProfilePage() {
                       className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                     >
                       <RefreshCw className="w-5 h-5" />
-                      {isAlternativeSkin ? 'Usar Skin Principal' : 'Usar Core Skin'}
+                      {isAlternativeSkin ? 'Use Main Skin' : 'Use Core Skin'}
                     </button>
                   </div>
                   <CarGallery 
