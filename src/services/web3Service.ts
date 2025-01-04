@@ -1,16 +1,16 @@
 import { ethers } from 'ethers';
 
-interface PartData {
+export interface CarGenerationData {
+  carImageURI: string;
+  parts: PartData[];
+}
+
+export interface PartData {
   partType: number;
   stat1: number;
   stat2: number;
   stat3: number;
   imageURI: string;
-}
-
-interface CarGenerationData {
-  carImageURI: string;
-  parts: PartData[];
 }
 
 class Web3Service {
