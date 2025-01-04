@@ -70,31 +70,49 @@ export function MintCarButton() {
   // Función para generar el carro en el backend
   const generateCar = async (): Promise<CarGenerationResponse> => {
     try {
+      console.log('Iniciando llamada a la API:', `${BACKEND_URL}/api/cars/generate`);
+      
+      const requestBody = {
+        prompt: "Generate a cool racing car",
+        style: "cartoon",
+        engineType: "standard",
+        transmissionType: "manual",
+        wheelsType: "sport"
+      };
+      
+      console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
       const response = await fetch(`${BACKEND_URL}/api/cars/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          prompt: "Generate a cool racing car",
-          style: "cartoon",
-          engineType: "standard",
-          transmissionType: "manual",
-          wheelsType: "sport"
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('Respuesta de la API - Status:', response.status);
+      const responseText = await response.text();
+      console.log('Respuesta de la API - Texto:', responseText);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Error al generar el carro: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`);
+        throw new Error(`Error al generar el carro: ${response.status} ${response.statusText} ${responseText}`);
       }
 
-      const data = await response.json();
-      console.log('Respuesta completa de la API:', JSON.stringify(data, null, 2));
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Error al parsear la respuesta:', e);
+        throw new Error('La respuesta de la API no es un JSON válido');
+      }
+
+      console.log('Datos parseados de la API:', JSON.stringify(data, null, 2));
 
       // Validar la estructura de la respuesta
-      if (!data) {
-        throw new Error('La respuesta de la API está vacía');
+      if (!data || !data.carImageURI || !data.parts) {
+        console.error('Respuesta inválida:', data);
+        throw new Error('La respuesta de la API no tiene la estructura esperada');
       }
 
       interface CarPart {
@@ -106,8 +124,12 @@ export function MintCarButton() {
       }
 
       // Procesar las partes y calcular los metadatos combinados
-      const processedParts = data.parts?.map((part: CarPart) => ({
-        partType: Number(part.partType),
+      const processedParts = data.parts?.map((part: any) => ({
+        partType: typeof part.partType === 'string' ? 
+          part.partType === "ENGINE" ? 0 :
+          part.partType === "TRANSMISSION" ? 1 :
+          part.partType === "WHEELS" ? 2 : 0
+        : Number(part.partType),
         stat1: Number(part.stat1 || 0),
         stat2: Number(part.stat2 || 0),
         stat3: Number(part.stat3 || 0),
@@ -162,37 +184,69 @@ export function MintCarButton() {
 
   const handleMint = async () => {
     if (!address) {
-      alert('Please connect your wallet first');
+      alert('Por favor conecta tu wallet primero');
       return;
     }
 
     try {
       setIsGenerating(true);
-      console.log('Iniciando generación del carro...');
+      console.log('Iniciando proceso de generación del carro...');
 
       // Primero, generar el carro en el backend
       const carData = await generateCar();
-      console.log('Carro generado:', carData);
+      console.log('Carro generado exitosamente:', carData);
 
       setIsGenerating(false);
       setIsMinting(true);
       console.log('Iniciando proceso de minteo...');
 
+      // Verificar que estamos en la red correcta
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+      console.log('Red actual:', {
+        chainId: network.chainId,
+        name: network.name
+      });
+
+      if (network.chainId !== 37111n) {
+        throw new Error('Por favor conecta tu wallet a la red Lens Network');
+      }
+
+      // Calcular el precio en wei (10 GRASS)
+      const mintPriceInGrass = "10.0";
+      const mintPriceInWei = ethers.parseUnits(mintPriceInGrass, 18);
+      console.log('Precio de minteo:', {
+        grass: mintPriceInGrass,
+        wei: mintPriceInWei.toString()
+      });
+
+      // Verificar balance
+      const balance = await provider.getBalance(address);
+      console.log('Balance actual:', ethers.formatUnits(balance, 18), 'GRASS');
+
+      if (balance < mintPriceInWei) {
+        throw new Error('No tienes suficientes GRASS tokens para mintear');
+      }
+
       // Usar el servicio web3 existente para mintear
+      console.log('Enviando transacción de minteo...');
       const hash = await web3Service.mintCar(
         address,
         carData,
-        '0.01' // Precio en ETH
+        mintPriceInWei.toString()
       );
 
       console.log('Transacción enviada, hash:', hash);
       setTxHash(hash);
 
       // Esperar a que la transacción se confirme
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const receipt = await provider.waitForTransaction(hash);
+      console.log('Esperando confirmación de la transacción...');
+      const receipt = await provider.waitForTransaction(hash, 2);
       
+      console.log('Recibo de la transacción:', receipt);
+
       if (receipt && receipt.status === 1) {
+        console.log('Transacción confirmada exitosamente');
         setIsMinting(false);
 
         // Crear el objeto mintedCar con los datos de la API
@@ -220,12 +274,12 @@ export function MintCarButton() {
             }
           })),
           combinedStats: {
-            speed: Math.min(10, Math.floor((Number(carData.parts[0].stat1) + Number(carData.parts[1].stat2)) / 2)), // Motor stat1 + Transmisión stat2
-            acceleration: Math.min(10, Math.floor((Number(carData.parts[0].stat3) + Number(carData.parts[1].stat1)) / 2)), // Motor stat3 + Transmisión stat1
-            handling: Math.min(10, Math.floor((Number(carData.parts[1].stat3) + Number(carData.parts[2].stat1)) / 2)), // Transmisión stat3 + Ruedas stat1
-            driftFactor: Math.min(10, Number(carData.parts[2].stat2)), // Ruedas stat2
-            turnFactor: Math.min(10, Number(carData.parts[2].stat3)), // Ruedas stat3
-            maxSpeed: Math.min(10, Number(carData.parts[0].stat2)) // Motor stat2
+            speed: Math.min(10, Math.floor((Number(carData.parts[0].stat1) + Number(carData.parts[1].stat2)) / 2)),
+            acceleration: Math.min(10, Math.floor((Number(carData.parts[0].stat3) + Number(carData.parts[1].stat1)) / 2)),
+            handling: Math.min(10, Math.floor((Number(carData.parts[1].stat3) + Number(carData.parts[2].stat1)) / 2)),
+            driftFactor: Math.min(10, Number(carData.parts[2].stat2)),
+            turnFactor: Math.min(10, Number(carData.parts[2].stat3)),
+            maxSpeed: Math.min(10, Number(carData.parts[0].stat2))
           }
         };
 
@@ -242,11 +296,29 @@ export function MintCarButton() {
       console.error('Error detallado al mintear:', error);
       if (error instanceof Error) {
         console.error('Mensaje de error:', error.message);
-        console.error('Stack trace:', error.stack);
+        console.error('Stack:', error.stack);
       }
       setIsGenerating(false);
       setIsMinting(false);
-      alert(`Error al mintear: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      
+      // Mejorar el mensaje de error para el usuario
+      let errorMessage = 'Error desconocido';
+      if (error instanceof Error) {
+        if (error.message.includes('insufficient funds')) {
+          errorMessage = 'No tienes suficientes GRASS tokens para mintear';
+        } else if (error.message.includes('user rejected')) {
+          errorMessage = 'Transacción rechazada por el usuario';
+        } else if (error.message.includes('gas required exceeds')) {
+          errorMessage = 'Error en el cálculo de gas. Intenta de nuevo';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Error de red. Por favor verifica tu conexión';
+        } else if (error.message.includes('API')) {
+          errorMessage = 'Error al generar el carro. Por favor intenta de nuevo';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      alert(`Error al mintear: ${errorMessage}`);
     }
   };
 
