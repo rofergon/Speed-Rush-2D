@@ -16,7 +16,7 @@ interface PartsInventoryProps {
 }
 
 export const PartsInventory: React.FC<PartsInventoryProps> = ({
-  parts,
+  parts: initialParts,
   selectedCar,
   onEquipPart,
   onUnequipPart,
@@ -25,6 +25,11 @@ export const PartsInventory: React.FC<PartsInventoryProps> = ({
   const [filterType, setFilterType] = useState<string>('all');
   const [filterEquipped, setFilterEquipped] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [parts, setParts] = useState<Part[]>(initialParts);
+
+  useEffect(() => {
+    setParts(initialParts);
+  }, [initialParts]);
 
   // Function to verify and update part status
   const verifyPartStatus = async (part: Part) => {
@@ -33,8 +38,11 @@ export const PartsInventory: React.FC<PartsInventoryProps> = ({
       if (exists) {
         const updatedPart = await partsService.getPartDetails(part.partId);
         if (updatedPart) {
-          // Here you could update the global parts state if needed
-          console.log('Part verified and updated:', updatedPart);
+          setParts(prevParts => 
+            prevParts.map(p => 
+              p.partId === part.partId ? updatedPart : p
+            )
+          );
           return updatedPart;
         }
       }
@@ -42,6 +50,38 @@ export const PartsInventory: React.FC<PartsInventoryProps> = ({
     } catch (error) {
       console.error('Error verifying part:', error);
       return part;
+    }
+  };
+
+  const handleUnequipPart = async (partId: string, carId: string) => {
+    try {
+      console.log('PartsInventory: Iniciando handleUnequipPart', { partId, carId });
+      
+      // Asegurarse de que onUnequipPart existe
+      if (!onUnequipPart) {
+        throw new Error('La función onUnequipPart no está definida');
+      }
+
+      // Llamar a la función de desequipar
+      await onUnequipPart(partId, carId);
+      console.log('PartsInventory: Parte desequipada, actualizando estado');
+
+      // Actualizar el estado después de desequipar
+      const updatedPart = await partsService.getPartDetails(partId);
+      if (updatedPart) {
+        console.log('PartsInventory: Detalles de la parte actualizados', updatedPart);
+        // Actualizar la lista de partes
+        setParts(prevParts => 
+          prevParts.map(p => 
+            p.partId === partId ? { ...p, isEquipped: false, equippedToCarId: undefined } : p
+          )
+        );
+        console.log('PartsInventory: Estado actualizado');
+      }
+    } catch (error: any) {
+      console.error('PartsInventory: Error al desequipar la parte:', error);
+      // Propagar el error para que pueda ser manejado por los componentes superiores
+      throw error;
     }
   };
 
@@ -138,7 +178,10 @@ export const PartsInventory: React.FC<PartsInventoryProps> = ({
                 undefined
               }
               onUnequip={part.isEquipped && part.equippedToCarId ? 
-                () => onUnequipPart(part.partId, part.equippedToCarId!) : 
+                async () => {
+                  console.log('PartsInventory: Llamando a handleUnequipPart', { partId: part.partId, carId: part.equippedToCarId });
+                  await handleUnequipPart(part.partId, part.equippedToCarId!);
+                } : 
                 undefined
               }
               canEquip={!!selectedCar && !part.isEquipped && 

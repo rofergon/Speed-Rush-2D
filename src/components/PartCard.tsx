@@ -214,10 +214,14 @@ export const PartCard: React.FC<PartCardProps> = ({
                 '&:hover': {
                   borderColor: '#f44336',
                   background: 'rgba(244, 67, 54, 0.08)'
+                },
+                '&.Mui-disabled': {
+                  borderColor: 'rgba(244, 67, 54, 0.3)',
+                  color: 'rgba(244, 67, 54, 0.3)'
                 }
               }}
             >
-              Unequip
+              Desequipar
             </Button>
           )}
         </Box>

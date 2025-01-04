@@ -19,38 +19,49 @@ class Web3Service {
   private carPartContract: ethers.Contract | null = null;
 
   constructor() {
+    if (!window.ethereum) {
+      throw new Error('MetaMask no está instalado');
+    }
     this.provider = new ethers.BrowserProvider(window.ethereum);
-    console.log('Contract addresses:', {
-      carNFT: import.meta.env.VITE_CAR_NFT_ADDRESS,
-      carPart: import.meta.env.VITE_CAR_PART_ADDRESS
-    });
+    console.log('web3Service: Provider inicializado');
   }
 
   private async getCarNFTContract(): Promise<ethers.Contract> {
     if (!this.carNFTContract) {
-      const signer = await this.provider.getSigner();
-      const address = import.meta.env.VITE_CAR_NFT_ADDRESS;
-      console.log('Creating CarNFT contract with address:', address);
-      if (!address) {
-        throw new Error('CarNFT contract address not found in environment variables');
+      try {
+        console.log('web3Service: Obteniendo signer...');
+        const signer = await this.provider.getSigner();
+        console.log('web3Service: Signer obtenido:', await signer.getAddress());
+        
+        const address = import.meta.env.VITE_CAR_NFT_ADDRESS;
+        console.log('web3Service: Creando contrato CarNFT con dirección:', address);
+        
+        if (!address) {
+          throw new Error('CarNFT contract address not found in environment variables');
+        }
+
+        this.carNFTContract = new ethers.Contract(
+          address,
+          [
+            "function mintPrice() view returns (uint256)",
+            "function mintCar(string memory carImageURI, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] memory partsData) payable",
+            "function setMintPrice(uint256 _newPrice)",
+            "function balanceOf(address owner) view returns (uint256)",
+            "function ownerOf(uint256 tokenId) view returns (address)",
+            "function getCarsByOwner(address owner) view returns (uint256[])",
+            "function getCarComposition(uint256 carId) view returns (uint256[] partIds, string carImageURI, bool[] slotOccupied)",
+            "function getFullCarMetadata(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats))",
+            "function equipPart(uint256 carId, uint256 partId, uint256 slotIndex)",
+            "function unequipPart(uint256 carId, uint256 partId)",
+            "function getLastTokenId() view returns (uint256)"
+          ],
+          signer
+        );
+        console.log('web3Service: Contrato CarNFT creado');
+      } catch (error) {
+        console.error('web3Service: Error al crear el contrato:', error);
+        throw error;
       }
-      this.carNFTContract = new ethers.Contract(
-        import.meta.env.VITE_CAR_NFT_ADDRESS,
-        [
-          "function mintPrice() view returns (uint256)",
-          "function mintCar(string memory carImageURI, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] memory partsData) payable",
-          "function setMintPrice(uint256 _newPrice)",
-          "function balanceOf(address owner) view returns (uint256)",
-          "function ownerOf(uint256 tokenId) view returns (address)",
-          "function getCarsByOwner(address owner) view returns (uint256[])",
-          "function getCarComposition(uint256 carId) view returns (uint256[] partIds, string carImageURI, bool[] slotOccupied)",
-          "function getFullCarMetadata(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats))",
-          "function equipPart(uint256 carId, uint256 partId, uint8 slotIndex)",
-          "function unequipPart(uint256 carId, uint256 partId)",
-          "function getLastTokenId() view returns (uint256)"
-        ],
-        signer
-      );
     }
     return this.carNFTContract;
   }
@@ -67,7 +78,8 @@ class Web3Service {
           "function exists(uint256 partId) view returns (bool)",
           "function ownerOf(uint256 tokenId) view returns (address)",
           "function balanceOf(address owner) view returns (uint256)",
-          "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)"
+          "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
+          "function getPartType(uint256 partId) view returns (uint8)"
         ],
         signer
       );
@@ -261,22 +273,140 @@ class Web3Service {
 
   async equipPart(carId: string, partId: string, slotIndex: number): Promise<void> {
     try {
+      console.log('web3Service: Iniciando equipPart', { carId, partId, slotIndex });
+      
+      // Verificar que el proveedor esté conectado
+      const accounts = await this.provider.listAccounts();
+      if (accounts.length === 0) {
+        throw new Error('No hay cuentas conectadas');
+      }
+      const userAddress = accounts[0].address;
+      console.log('web3Service: Cuenta conectada:', userAddress);
+
       const contract = await this.getCarNFTContract();
-      const tx = await contract.equipPart(carId, partId, slotIndex);
-      await tx.wait();
+      const carPartContract = await this.getCarPartContract();
+
+      // Convertir los parámetros a BigInt
+      const carIdBigInt = BigInt(carId);
+      const partIdBigInt = BigInt(partId);
+      console.log('web3Service: Parámetros convertidos:', {
+        carIdBigInt: carIdBigInt.toString(),
+        partIdBigInt: partIdBigInt.toString(),
+        slotIndex
+      });
+
+      // Verificar que el carro existe y pertenece al usuario
+      try {
+        const exists = await contract.ownerOf(carIdBigInt).then(() => true).catch(() => false);
+        console.log('web3Service: ¿El carro existe?:', exists);
+        if (!exists) {
+          throw new Error('El carro no existe');
+        }
+
+        const carOwner = await contract.ownerOf(carIdBigInt);
+        console.log('web3Service: Dueño del carro:', { carOwner, userAddress });
+        if (carOwner.toLowerCase() !== userAddress.toLowerCase()) {
+          throw new Error('No eres el dueño del carro');
+        }
+      } catch (error) {
+        console.error('web3Service: Error verificando dueño del carro:', error);
+        throw error;
+      }
+
+      // Verificar que la parte existe y pertenece al usuario
+      try {
+        const exists = await carPartContract.ownerOf(partIdBigInt).then(() => true).catch(() => false);
+        console.log('web3Service: ¿La parte existe?:', exists);
+        if (!exists) {
+          throw new Error('La parte no existe');
+        }
+
+        const partOwner = await carPartContract.ownerOf(partIdBigInt);
+        console.log('web3Service: Dueño de la parte:', { partOwner, userAddress });
+        if (partOwner.toLowerCase() !== userAddress.toLowerCase()) {
+          throw new Error('No eres el dueño de la parte');
+        }
+      } catch (error) {
+        console.error('web3Service: Error verificando dueño de la parte:', error);
+        throw error;
+      }
+
+      // Verificar que la parte no está equipada
+      try {
+        const isEquipped = await carPartContract.isEquipped(partIdBigInt);
+        console.log('web3Service: Estado de la parte:', { isEquipped });
+        if (isEquipped) {
+          const equippedCarId = await carPartContract.getEquippedCar(partIdBigInt);
+          console.log('web3Service: La parte está equipada en el carro:', equippedCarId.toString());
+          throw new Error('La parte ya está equipada en otro carro');
+        }
+      } catch (error) {
+        console.error('web3Service: Error verificando estado de la parte:', error);
+        throw error;
+      }
+
+      // Verificar que el slot no está ocupado
+      try {
+        const [partIds, , slotOccupied] = await contract.getCarComposition(carIdBigInt);
+        console.log('web3Service: Composición del carro:', { 
+          partIds: partIds.map((id: bigint) => id.toString()), 
+          slotOccupied 
+        });
+        if (slotOccupied[slotIndex]) {
+          console.log('web3Service: El slot', slotIndex, 'está ocupado con la parte', partIds[slotIndex].toString());
+          throw new Error('El slot ya está ocupado');
+        }
+      } catch (error) {
+        console.error('web3Service: Error verificando slot:', error);
+        throw error;
+      }
+
+      // Verificar que el tipo de parte coincide con el slot
+      try {
+        const partStats = await carPartContract.getPartStats(partIdBigInt);
+        const partType = Number(partStats.partType);
+        console.log('web3Service: Tipo de parte:', { partType, slotIndex });
+        if (partType !== slotIndex) {
+          throw new Error(`El tipo de parte (${partType}) no coincide con el slot (${slotIndex})`);
+        }
+      } catch (error) {
+        console.error('web3Service: Error verificando tipo de parte:', error);
+        throw error;
+      }
+
+      console.log('web3Service: Todas las validaciones pasaron, llamando a equipPart');
+      const tx = await contract.equipPart(carIdBigInt, partIdBigInt, slotIndex);
+      console.log('web3Service: Transacción enviada:', tx.hash);
+      
+      const receipt = await tx.wait();
+      console.log('web3Service: Transacción confirmada:', receipt);
     } catch (error) {
-      console.error('Error equipping part:', error);
+      console.error('web3Service: Error equipping part:', error);
       throw error;
     }
   }
 
   async unequipPart(carId: string, partId: string): Promise<void> {
     try {
+      console.log('web3Service: Iniciando unequipPart', { carId, partId });
+      
+      // Verificar que el proveedor esté conectado
+      const accounts = await this.provider.listAccounts();
+      if (accounts.length === 0) {
+        throw new Error('No hay cuentas conectadas');
+      }
+      console.log('web3Service: Cuenta conectada:', accounts[0].address);
+
       const contract = await this.getCarNFTContract();
+      console.log('web3Service: Contrato obtenido, llamando a unequipPart');
+      
       const tx = await contract.unequipPart(carId, partId);
-      await tx.wait();
+      console.log('web3Service: Transacción enviada:', tx.hash);
+      
+      const receipt = await tx.wait();
+      console.log('web3Service: Transacción confirmada:', receipt);
     } catch (error) {
-      console.error('Error unequipping part:', error);
+      console.error('web3Service: Error unequipping part:', error);
       throw error;
     }
   }

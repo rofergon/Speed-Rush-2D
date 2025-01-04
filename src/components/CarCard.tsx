@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Typography, Box, Button, Chip, Grid, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Card, Typography, Box, Button, Chip, Grid, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from '@mui/material';
 import SpeedIcon from '@mui/icons-material/Speed';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -39,7 +39,7 @@ interface CarCardProps {
   availableParts?: Part[];
   onSelect?: () => void;
   onEquipPart?: (partId: string, slotType: number) => Promise<void>;
-  onUnequipPart?: (partId: string) => Promise<void>;
+  onUnequipPart?: (partId: string, carId: string) => Promise<void>;
   isSelected?: boolean;
   alternativeSkin?: boolean;
 }
@@ -69,10 +69,11 @@ interface PartSlotProps {
   part?: Part;
   availableParts?: Part[];
   onEquipPart?: (partId: string) => Promise<void>;
-  onUnequipPart?: (partId: string) => Promise<void>;
+  onUnequipPart?: (partId: string, carId: string) => Promise<void>;
+  carId: string;
 }
 
-const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], onEquipPart, onUnequipPart }) => {
+const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], onEquipPart, onUnequipPart, carId }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUnequipDialogOpen, setIsUnequipDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,30 +114,64 @@ const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], on
   };
 
   const handleEquip = async (partId: string) => {
-    if (onEquipPart) {
-      setIsLoading(true);
-      try {
-        await onEquipPart(partId);
-        setIsDialogOpen(false);
-      } catch (error) {
-        console.error('Error equipando parte:', error);
-      } finally {
-        setIsLoading(false);
+    if (!onEquipPart) {
+      console.log('PartSlot: onEquipPart no está definido');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      console.log('PartSlot: Iniciando equipamiento:', { partId });
+      await onEquipPart(partId);
+      console.log('PartSlot: Equipamiento completado');
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      console.error('PartSlot: Error equipando parte:', error);
+      // Si el error es porque MetaMask no está instalado o no hay cuentas conectadas,
+      // intentamos conectar la wallet
+      if (error.message.includes('MetaMask') || error.message.includes('cuentas conectadas')) {
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          // Reintentar después de conectar
+          await onEquipPart(partId);
+          setIsDialogOpen(false);
+        } catch (retryError) {
+          console.error('PartSlot: Error al reintentar:', retryError);
+        }
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleUnequip = async () => {
-    if (part && onUnequipPart) {
-      setIsLoading(true);
-      try {
-        await onUnequipPart(part.partId);
-        setIsUnequipDialogOpen(false);
-      } catch (error) {
-        console.error('Error desequipando parte:', error);
-      } finally {
-        setIsLoading(false);
+    if (!part || !onUnequipPart || !carId) {
+      console.log('PartSlot: Falta información requerida:', { part, onUnequipPart, carId });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      console.log('PartSlot: Iniciando desequipamiento:', { partId: part.partId, carId });
+      await onUnequipPart(part.partId, carId);
+      console.log('PartSlot: Desequipamiento completado');
+      setIsUnequipDialogOpen(false);
+    } catch (error: any) {
+      console.error('PartSlot: Error desequipando parte:', error);
+      // Si el error es porque MetaMask no está instalado o no hay cuentas conectadas,
+      // intentamos conectar la wallet
+      if (error.message.includes('MetaMask') || error.message.includes('cuentas conectadas')) {
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          // Reintentar después de conectar
+          await onUnequipPart(part.partId, carId);
+          setIsUnequipDialogOpen(false);
+        } catch (retryError) {
+          console.error('PartSlot: Error al reintentar:', retryError);
+        }
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -241,17 +276,17 @@ const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], on
                       p: 2,
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: '8px',
-                      cursor: 'pointer',
+                      cursor: isLoading ? 'wait' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 2,
                       background: 'rgba(33, 150, 243, 0.05)',
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
-                        background: 'rgba(33, 150, 243, 0.1)',
-                        borderColor: 'rgba(33, 150, 243, 0.3)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 12px rgba(33, 150, 243, 0.2)'
+                        background: isLoading ? 'rgba(33, 150, 243, 0.05)' : 'rgba(33, 150, 243, 0.1)',
+                        borderColor: isLoading ? 'rgba(33, 150, 243, 0.1)' : 'rgba(33, 150, 243, 0.3)',
+                        transform: isLoading ? 'none' : 'translateY(-2px)',
+                        boxShadow: isLoading ? 'none' : '0 4px 12px rgba(33, 150, 243, 0.2)'
                       }
                     }}
                   >
@@ -264,7 +299,8 @@ const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], on
                         height: '48px',
                         objectFit: 'cover',
                         borderRadius: '4px',
-                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
+                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                        opacity: isLoading ? 0.5 : 1
                       }}
                     />
                     <Box>
@@ -272,9 +308,19 @@ const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], on
                         #{availablePart.partId}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Available {getSlotLabel(type)}
+                        {isLoading ? 'Equipando...' : `Available ${getSlotLabel(type)}`}
                       </Typography>
                     </Box>
+                    {isLoading && (
+                      <CircularProgress 
+                        size={24} 
+                        sx={{ 
+                          position: 'absolute',
+                          right: 16,
+                          color: 'primary.main'
+                        }} 
+                      />
+                    )}
                   </Box>
                 ))
             ) : (
@@ -387,16 +433,19 @@ const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], on
             onClick={handleUnequip}
             variant="contained"
             disabled={isLoading}
-            startIcon={<DeleteOutlineIcon />}
+            startIcon={isLoading ? <CircularProgress size={20} /> : <DeleteOutlineIcon />}
             sx={{
               background: 'linear-gradient(45deg, #f44336 30%, #ff1744 90%)',
               boxShadow: '0 3px 5px 2px rgba(244, 67, 54, .3)',
               '&:hover': {
                 background: 'linear-gradient(45deg, #d32f2f 30%, #f50057 90%)',
+              },
+              '&.Mui-disabled': {
+                background: 'rgba(244, 67, 54, 0.5)',
               }
             }}
           >
-            {isLoading ? 'Unequipping...' : 'Unequip Part'}
+            {isLoading ? 'Desequipando...' : 'Desequipar Parte'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -420,6 +469,26 @@ export const CarCard: React.FC<CarCardProps> = ({
 
   const handleSlotClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Evitar que el click del slot propague al card
+  };
+
+  const handleEquipPart = async (partId: string, slotType: number) => {
+    if (!onEquipPart) return Promise.resolve();
+    return onEquipPart(partId, slotType);
+  };
+
+  const handleUnequipPart = async (partId: string, carId: string) => {
+    if (!onUnequipPart) {
+      console.log('CarCard: onUnequipPart no está definido');
+      return Promise.resolve();
+    }
+    console.log('CarCard handleUnequipPart:', { partId, carId });
+    try {
+      await onUnequipPart(partId, carId);
+      return Promise.resolve();
+    } catch (error) {
+      console.error('CarCard: Error en handleUnequipPart:', error);
+      return Promise.reject(error);
+    }
   };
 
   return (
@@ -531,22 +600,34 @@ export const CarCard: React.FC<CarCardProps> = ({
                 type={0} 
                 part={parts.find(p => p.partType === 0)}
                 availableParts={availableParts}
-                onEquipPart={(partId) => onEquipPart?.(partId, 0)}
-                onUnequipPart={onUnequipPart}
+                onEquipPart={async (partId) => {
+                  if (!onEquipPart) return Promise.resolve();
+                  return onEquipPart(partId, 0);
+                }}
+                onUnequipPart={handleUnequipPart}
+                carId={id}
               />
               <PartSlot 
                 type={1} 
                 part={parts.find(p => p.partType === 1)}
                 availableParts={availableParts}
-                onEquipPart={(partId) => onEquipPart?.(partId, 1)}
-                onUnequipPart={onUnequipPart}
+                onEquipPart={async (partId) => {
+                  if (!onEquipPart) return Promise.resolve();
+                  return onEquipPart(partId, 1);
+                }}
+                onUnequipPart={handleUnequipPart}
+                carId={id}
               />
               <PartSlot 
                 type={2} 
                 part={parts.find(p => p.partType === 2)}
                 availableParts={availableParts}
-                onEquipPart={(partId) => onEquipPart?.(partId, 2)}
-                onUnequipPart={onUnequipPart}
+                onEquipPart={async (partId) => {
+                  if (!onEquipPart) return Promise.resolve();
+                  return onEquipPart(partId, 2);
+                }}
+                onUnequipPart={handleUnequipPart}
+                carId={id}
               />
             </Box>
           </Grid>
