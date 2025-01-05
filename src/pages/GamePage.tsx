@@ -8,6 +8,7 @@ import { useAccount } from "wagmi";
 import { web3Service } from '../services/web3Service';
 import { activeCarService } from '../services/activeCarService';
 import type { Car } from '../types/car';
+import { ethers } from 'ethers';
 
 // Declare window type
 declare global {
@@ -122,16 +123,53 @@ export function GamePage() {
     }
 
     // Function that receives data from Unity
-    window.onLapTimesMinted = (lapTimesData: string) => {
-      // Split lap times
-      const laps = lapTimesData.split('|').filter(lap => lap !== '');
-      
-      // Show in console
-      console.log('Successful minting!');
-      console.log('Lap times:');
-      laps.forEach(lap => console.log(lap));
+    window.onLapTimesMinted = async (lapTimesData: string) => {
+      try {
+        // Split lap times
+        const laps = lapTimesData.split('|').filter(lap => lap !== '');
+        
+        // Get active car
+        const activeCar = activeCarService.getActiveCar();
+        if (!activeCar) {
+          console.error('No active car found');
+          return;
+        }
 
-      alert('Successful minting!\n' + laps.join('\n'));
+        // Get the best lap time in milliseconds
+        const bestLapTimeMs = laps.reduce((best, lap) => {
+          const timeMatch = lap.match(/Lap \d+: (\d+):(\d+):(\d+)/);
+          if (timeMatch) {
+            const [, minutes, seconds, milliseconds] = timeMatch;
+            const totalMs = (parseInt(minutes) * 60000) + (parseInt(seconds) * 1000) + parseInt(milliseconds) * 10;
+            return best === 0 ? totalMs : Math.min(best, totalMs);
+          }
+          return best;
+        }, 0);
+
+        // Get contract instance
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const leaderboardContract = new ethers.Contract(
+          import.meta.env.VITE_RACE_LEADERBOARD_ADDRESS,
+          [
+            "function mintRaceResult(uint256 carId, uint256 time) external returns (uint256)"
+          ],
+          signer
+        );
+
+        // Mint the race result
+        const tx = await leaderboardContract.mintRaceResult(activeCar.id, bestLapTimeMs);
+        await tx.wait();
+        
+        console.log('Successfully minted race result to leaderboard!');
+        console.log('Lap times:');
+        laps.forEach(lap => console.log(lap));
+
+        alert('Successfully minted race result to leaderboard!\n' + laps.join('\n'));
+      } catch (error) {
+        console.error('Error minting race result:', error);
+        alert('Error minting race result. Please try again.');
+      }
     };
 
     window.RequestCarNFTImage = async () => {
@@ -295,22 +333,30 @@ export function GamePage() {
         ) : (
           <div className="flex flex-col gap-8">
             {/* Unity Game Container */}
-            <div className="webgl-content">
+            <div className="relative">
               <div id="unity-container" className="unity-desktop">
-                <canvas id="unity-canvas"></canvas>
+                <canvas id="unity-canvas" width={960} height={600} tabIndex={-1} />
                 <div id="unity-loading-bar">
                   <div id="unity-logo"></div>
                   <div id="unity-progress-bar-empty">
                     <div id="unity-progress-bar-full"></div>
                   </div>
                 </div>
+                <div id="unity-warning"> </div>
                 <div id="unity-footer">
+                  <div id="unity-logo-title-footer"></div>
                   <div id="unity-fullscreen-button"></div>
+                  <div id="unity-build-title">Rush racing</div>
                 </div>
               </div>
             </div>
           </div>
         )}
+
+        {/* Leaderboard - Always visible */}
+        <div className="mt-8 max-w-4xl mx-auto">
+          <Leaderboard />
+        </div>
       </div>
     </div>
   );

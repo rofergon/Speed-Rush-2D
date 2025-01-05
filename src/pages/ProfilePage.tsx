@@ -11,13 +11,15 @@ import { Gamepad2, Car as CarIcon, Wrench, RefreshCw } from 'lucide-react';
 import { Part } from '../types/parts';
 import { partsService } from '../services/partsService';
 import { web3Service } from '../services/web3Service';
+import { activeCarService } from '../services/activeCarService';
+import { Car } from '../types/car';
 
 export function ProfilePage() {
   const { isConnected, address } = useAccount();
   const [isAlternativeSkin, setIsAlternativeSkin] = useState(false);
   const [activeTab, setActiveTab] = useState<'cars' | 'parts'>('cars');
   const [parts, setParts] = useState<Part[]>([]);
-  const [selectedCar, setSelectedCar] = useState<{ id: string; parts: Part[] } | undefined>();
+  const [selectedCar, setSelectedCar] = useState<Car | undefined>();
   const [isLoadingParts, setIsLoadingParts] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,8 +48,20 @@ export function ProfilePage() {
     }
   }, [isConnected, address]);
 
-  const handleCarSelect = async (car: { id: string; parts: Part[] }) => {
-    setSelectedCar(car);
+  const handleCarSelect = async (car: Car) => {
+    try {
+      // Obtener los datos actualizados del carro
+      const updatedCarParts = await web3Service.getCarParts(car.id);
+      const updatedCar = {
+        ...car,
+        parts: updatedCarParts
+      };
+      setSelectedCar(updatedCar);
+      activeCarService.setActiveCar(updatedCar);
+    } catch (error) {
+      console.error('Error selecting car:', error);
+      setError('Error selecting car. Please try again.');
+    }
   };
 
   const handleEquipPart = async (partId: string, carId: string, slotIndex: number) => {
@@ -59,10 +73,15 @@ export function ProfilePage() {
         setParts(userParts);
         if (selectedCar) {
           const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
-          setSelectedCar({
+          const updatedCar = {
             ...selectedCar,
             parts: updatedCarParts
-          });
+          };
+          setSelectedCar(updatedCar);
+          const activeCar = activeCarService.getActiveCar();
+          if (activeCar && activeCar.id === selectedCar.id) {
+            activeCarService.setActiveCar(updatedCar);
+          }
         }
       }
     } catch (error) {
@@ -80,10 +99,15 @@ export function ProfilePage() {
         setParts(userParts);
         if (selectedCar) {
           const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
-          setSelectedCar({
+          const updatedCar = {
             ...selectedCar,
             parts: updatedCarParts
-          });
+          };
+          setSelectedCar(updatedCar);
+          const activeCar = activeCarService.getActiveCar();
+          if (activeCar && activeCar.id === selectedCar.id) {
+            activeCarService.setActiveCar(updatedCar);
+          }
         }
       }
     } catch (error) {
@@ -181,13 +205,24 @@ export function ProfilePage() {
                       <MintCarButton />
                       <MintPriceDebug />
                     </div>
-                    <button
-                      onClick={() => handleSkinChange(!isAlternativeSkin)}
-                      className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                    >
-                      <RefreshCw className="w-5 h-5" />
-                      {isAlternativeSkin ? 'Use Main Skin' : 'Use Core Skin'}
-                    </button>
+                    <div className="flex gap-4">
+                      {selectedCar && (
+                        <Link 
+                          to="/game"
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                          <Gamepad2 className="w-5 h-5" />
+                          Play with this car
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => handleSkinChange(!isAlternativeSkin)}
+                        className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-5 h-5" />
+                        {isAlternativeSkin ? 'Use Main Skin' : 'Use Core Skin'}
+                      </button>
+                    </div>
                   </div>
                   <CarGallery 
                     alternativeSkin={isAlternativeSkin} 

@@ -13,6 +13,8 @@ import EngineeringIcon from '@mui/icons-material/Engineering';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { LoadingButton } from '@mui/lab';
+import { Part } from '../types/parts';
+import { Car } from '../types/car';
 
 interface CarStats {
   speed: number;
@@ -23,19 +25,10 @@ interface CarStats {
   turnFactor: number;
 }
 
-interface Part {
-  partId: string;
-  partType: number;
-  stats: any;
-  imageURI: string;
-  isEquipped: boolean;
-  equippedToCarId?: string;
-}
-
 interface CarCardProps {
   id: string;
   imageUrl: string;
-  stats?: Partial<CarStats>;
+  stats: CarStats;
   parts?: Part[];
   availableParts?: Part[];
   onSelect?: () => void;

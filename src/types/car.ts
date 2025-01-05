@@ -1,16 +1,4 @@
-export interface Part {
-  partId: string;
-  partType: number;
-  imageURI: string;
-  stats: {
-    speed?: number;
-    maxSpeed?: number;
-    acceleration?: number;
-    handling?: number;
-    driftFactor?: number;
-    turnFactor?: number;
-  };
-}
+import { Part } from './parts';
 
 export interface Car {
   id: string;

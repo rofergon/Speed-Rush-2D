@@ -4,11 +4,13 @@ import { useAccount } from 'wagmi';
 import { CarCard } from './CarCard';
 import { web3Service } from '../services/web3Service';
 import { partsService } from '../services/partsService';
+import { Car } from '../types/car';
+import { Part } from '../types/parts';
 
 interface CarGalleryProps {
   alternativeSkin: boolean;
   onSkinChange: (newState: boolean) => void;
-  onSelectCar?: (car: { id: string; parts: any[] }) => void;
+  onSelectCar?: (car: Car) => void;
 }
 
 export const CarGallery: React.FC<CarGalleryProps> = ({
@@ -18,8 +20,8 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cars, setCars] = useState<any[]>([]);
-  const [availableParts, setAvailableParts] = useState<any[]>([]);
+  const [cars, setCars] = useState<Car[]>([]);
+  const [availableParts, setAvailableParts] = useState<Part[]>([]);
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
   const { address } = useAccount();
 
@@ -31,7 +33,7 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
       
       // Cargar carros y sus partes
       const userCars = await web3Service.getUserCars(address);
-      const carsWithParts = await Promise.all(userCars.map(async (car: any) => {
+      const carsWithParts = await Promise.all(userCars.map(async (car: Car) => {
         const parts = await web3Service.getCarParts(car.id);
         return {
           ...car,
@@ -56,7 +58,7 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
     loadData();
   }, [address]);
 
-  const handleCarSelect = (car: any) => {
+  const handleCarSelect = (car: Car) => {
     setSelectedCarId(car.id);
     if (onSelectCar) {
       onSelectCar(car);
@@ -113,32 +115,22 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
 
   return (
     <Grid container spacing={2}>
-      {cars.map((car) => {
-        const stats = car.combinedStats || car.stats || {};
-        return (
-          <Grid item xs={12} sm={6} md={3} key={car.id}>
-            <CarCard
-              id={car.id}
-              imageUrl={alternativeSkin ? car.alternativeImageURI : car.carImageURI}
-              stats={{
-                speed: Number(stats.speed) || 0,
-                maxSpeed: Number(stats.maxSpeed) || 0,
-                acceleration: Number(stats.acceleration) || 0,
-                handling: Number(stats.handling) || 0,
-                driftFactor: Number(stats.driftFactor) || 0,
-                turnFactor: Number(stats.turnFactor) || 0
-              }}
-              parts={car.parts}
-              availableParts={availableParts}
-              onSelect={() => handleCarSelect(car)}
-              onEquipPart={handleEquipPart}
-              onUnequipPart={handleUnequipPart}
-              isSelected={selectedCarId === car.id}
-              alternativeSkin={alternativeSkin}
-            />
-          </Grid>
-        );
-      })}
+      {cars.map((car) => (
+        <Grid item xs={12} sm={6} md={3} key={car.id}>
+          <CarCard
+            id={car.id}
+            imageUrl={car.carImageURI}
+            stats={car.combinedStats}
+            parts={car.parts}
+            availableParts={availableParts}
+            onSelect={() => handleCarSelect(car)}
+            onEquipPart={handleEquipPart}
+            onUnequipPart={handleUnequipPart}
+            isSelected={selectedCarId === car.id}
+            alternativeSkin={alternativeSkin}
+          />
+        </Grid>
+      ))}
     </Grid>
   );
-}; 
+} 

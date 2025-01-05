@@ -4,8 +4,8 @@ import { Trophy, Medal, Award } from 'lucide-react';
 type LeaderboardEntryProps = {
   position: number;
   username: string;
-  score: number;
   time: string;
+  carId: bigint;
 };
 
 const getRankIcon = (position: number) => {
@@ -21,7 +21,7 @@ const getRankIcon = (position: number) => {
   }
 };
 
-export function LeaderboardEntry({ position, username, score, time }: LeaderboardEntryProps) {
+export function LeaderboardEntry({ position, username, time, carId }: LeaderboardEntryProps) {
   return (
     <div className={`flex items-center p-3 ${position <= 3 ? 'bg-gray-700/50' : 'bg-gray-800/30'} rounded-lg hover:bg-gray-600/50 transition-all`}>
       <div className="w-12 text-center flex items-center justify-center">
@@ -31,7 +31,7 @@ export function LeaderboardEntry({ position, username, score, time }: Leaderboar
         <span className="font-medium text-gray-100">{username}</span>
       </div>
       <div className="px-4 text-right">
-        <span className="text-yellow-400 font-bold">{score.toLocaleString()}</span>
+        <span className="text-yellow-400 font-bold">Car #{carId.toString()}</span>
       </div>
       <div className="w-24 text-right">
         <span className="text-gray-400 font-medium">{time}</span>
