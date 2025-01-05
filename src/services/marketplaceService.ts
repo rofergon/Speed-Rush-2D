@@ -1,27 +1,17 @@
 import { ethers } from 'ethers';
-import CarMarketplaceABI from '../contracts/abis/CarMarketplace.json';
-import CarNFTABI from '../contracts/abis/CarNFT.json';
 import { web3Service } from './web3Service';
 import { Car } from '../types/car';
+import { Log, EventLog, Result } from 'ethers';
 
 interface CarListing {
   seller: string;
   carId: bigint;
   price: bigint;
-  partSlots: Array<{
-    included: boolean;
-    partId: bigint;
-  }>;
   active: boolean;
-}
-
-interface CarListedEvent extends ethers.Log {
-  args: [bigint, string, bigint, boolean[]];
 }
 
 class MarketplaceService {
   private contract: ethers.Contract | null = null;
-  private carNFTContract: ethers.Contract | null = null;
 
   async init() {
     if (!this.contract) {
@@ -29,12 +19,16 @@ class MarketplaceService {
       const signer = await provider.getSigner();
       this.contract = new ethers.Contract(
         import.meta.env.VITE_CAR_MARKETPLACE_ADDRESS,
-        CarMarketplaceABI.abi,
-        signer
-      );
-      this.carNFTContract = new ethers.Contract(
-        import.meta.env.VITE_CAR_NFT_ADDRESS,
-        CarNFTABI.abi,
+        [
+          "function listCar(uint256 carId, uint256 price, bool[3] memory includeSlots) external",
+          "function cancelCarListing(uint256 carId) external",
+          "function carListings(uint256) view returns (address seller, uint256 carId, uint256 price, bool active)",
+          "function buyCar(uint256 carId) external payable",
+          "function getListingApprovalStatus(uint256 carId, bool[3] memory includeSlots) external view returns (bool carApproved, bool[] memory partsApproved)",
+          "event CarListed(uint256 indexed carId, address indexed seller, uint256 price, bool[3] slotsIncluded)",
+          "event CarSold(uint256 indexed carId, address indexed seller, address indexed buyer, uint256 price)",
+          "event ListingCancelled(uint256 indexed carId, bool isCar)"
+        ],
         signer
       );
     }
@@ -43,49 +37,67 @@ class MarketplaceService {
 
   async getListedCars(): Promise<Car[]> {
     const contract = await this.init();
-    if (!contract || !this.carNFTContract) return [];
+    if (!contract) return [];
 
     try {
-      // Obtener todos los carros listados activos
+      console.log('Buscando eventos CarListed...');
+      // Obtener todos los eventos CarListed
       const filter = contract.filters.CarListed();
-      const events = (await contract.queryFilter(filter)) as CarListedEvent[];
-      const listedCars: Car[] = [];
+      const allEvents = await contract.queryFilter(filter);
+      console.log('Eventos encontrados:', allEvents.length);
 
-      for (const event of events) {
-        const [carId] = event.args;
-        if (!carId) continue;
+      const listedCars: Car[] = [];
+      const processedCarIds = new Set<string>();
+
+      // Procesar eventos en orden inverso (más recientes primero)
+      for (const event of allEvents.reverse()) {
+        // Extraer carId del topic indexado (está en la posición 1)
+        const carId = BigInt(event.topics[1]).toString();
+        // Extraer seller del topic indexado (está en la posición 2)
+        const seller = `0x${event.topics[2].slice(26)}`;
+        
+        console.log('Procesando carro:', carId, 'seller:', seller);
+        
+        // Evitar procesar el mismo carro más de una vez
+        if (processedCarIds.has(carId)) {
+          console.log('Carro ya procesado:', carId);
+          continue;
+        }
+        processedCarIds.add(carId);
 
         try {
-          const listing = (await contract.carListings(carId)) as CarListing;
-          if (!listing.active) continue;
+          // Verificar si el listado sigue activo
+          console.log('Verificando listado del carro:', carId);
+          const [seller, carIdBN, price, active] = await contract.carListings(carId);
+          console.log('Estado del listado:', { seller, carId: carIdBN.toString(), price: price.toString(), active });
+          
+          if (!active) {
+            console.log('Listado no activo para el carro:', carId);
+            continue;
+          }
 
-          // Obtener datos del carro desde el contrato CarNFT
-          const carData = await this.carNFTContract.getCar(carId);
-          const carURI = await this.carNFTContract.tokenURI(carId);
+          // Obtener datos completos del carro usando web3Service
+          console.log('Obteniendo datos completos del carro:', carId);
+          const cars = await web3Service.getUserCars(seller);
+          const carData = cars.find(car => car.id === carId);
+          console.log('Datos del carro:', carData);
 
-          listedCars.push({
-            id: carId.toString(),
-            carImageURI: carURI,
-            combinedStats: {
-              speed: Number(carData.stats.speed),
-              acceleration: Number(carData.stats.acceleration),
-              handling: Number(carData.stats.handling),
-              driftFactor: Number(carData.stats.driftFactor),
-              turnFactor: Number(carData.stats.turnFactor),
-              maxSpeed: Number(carData.stats.maxSpeed)
-            },
-            parts: [], // Aquí podrías cargar las partes si es necesario
-            price: Number(ethers.formatEther(listing.price)),
-            seller: listing.seller,
-            condition: 100, // Este valor podría venir del contrato si lo tienes
-            listedAt: event.blockNumber ? (await event.getBlock()).timestamp * 1000 : Date.now()
-          });
+          if (carData) {
+            listedCars.push({
+              ...carData,
+              seller: seller,
+              price: Number(ethers.formatEther(price)),
+              listedAt: (await this.getBlockTimestamp(event.blockNumber)) * 1000
+            });
+            console.log('Carro agregado a la lista:', carId);
+          }
         } catch (error) {
           console.error(`Error loading car ${carId}:`, error);
           continue;
         }
       }
 
+      console.log('Total de carros listados encontrados:', listedCars.length);
       return listedCars;
     } catch (error) {
       console.error('Error getting listed cars:', error);
@@ -93,18 +105,16 @@ class MarketplaceService {
     }
   }
 
+  private async getBlockTimestamp(blockNumber: number): Promise<number> {
+    const provider = await web3Service.getProvider();
+    const block = await provider.getBlock(blockNumber);
+    return block ? Number(block.timestamp) : Math.floor(Date.now() / 1000);
+  }
+
   async listCar(carId: string, price: number, includeSlots: boolean[]) {
     const contract = await this.init();
     const priceInWei = ethers.parseEther(price.toString());
     const tx = await contract.listCar(carId, priceInWei, includeSlots);
-    await tx.wait();
-    return tx;
-  }
-
-  async listPart(partId: string, price: number) {
-    const contract = await this.init();
-    const priceInWei = ethers.parseEther(price.toString());
-    const tx = await contract.listPart(partId, priceInWei);
     await tx.wait();
     return tx;
   }
@@ -117,49 +127,11 @@ class MarketplaceService {
     return tx;
   }
 
-  async buyPart(partId: string, price: number) {
-    const contract = await this.init();
-    const priceInWei = ethers.parseEther(price.toString());
-    const tx = await contract.buyPart(partId, { value: priceInWei });
-    await tx.wait();
-    return tx;
-  }
-
   async cancelCarListing(carId: string) {
     const contract = await this.init();
     const tx = await contract.cancelCarListing(carId);
     await tx.wait();
     return tx;
-  }
-
-  async cancelPartListing(partId: string) {
-    const contract = await this.init();
-    const tx = await contract.cancelPartListing(partId);
-    await tx.wait();
-    return tx;
-  }
-
-  async getCarListing(carId: string) {
-    const contract = await this.init();
-    const listing = await contract.carListings(carId) as CarListing;
-    return {
-      seller: listing.seller,
-      carId: listing.carId.toString(),
-      price: ethers.formatEther(listing.price),
-      active: listing.active,
-      partSlots: listing.partSlots
-    };
-  }
-
-  async getPartListing(partId: string) {
-    const contract = await this.init();
-    const listing = await contract.partListings(partId);
-    return {
-      seller: listing.seller,
-      partId: listing.partId.toString(),
-      price: ethers.formatEther(listing.price),
-      active: listing.active
-    };
   }
 }
 
