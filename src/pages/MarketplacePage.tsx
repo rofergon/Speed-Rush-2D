@@ -8,61 +8,7 @@ import { Search, Filter, SortDesc, Car as CarIcon, Info, Gamepad2, Wrench } from
 import { Background } from '../components/Background';
 import { marketplaceService } from '../services/marketplaceService';
 import { toast } from 'react-hot-toast';
-
-// Mock cars for sale
-const mockCars: Car[] = [
-  {
-    id: '1',
-    carImageURI: '/car1.png',
-    combinedStats: {
-      speed: 85,
-      acceleration: 75,
-      handling: 80,
-      driftFactor: 70,
-      turnFactor: 65,
-      maxSpeed: 200
-    },
-    parts: [],
-    price: 0.01, // GRASS
-    seller: '0x1234...5678',
-    condition: 100,
-    listedAt: new Date().getTime()
-  },
-  {
-    id: '2',
-    carImageURI: '/car2.png',
-    combinedStats: {
-      speed: 90,
-      acceleration: 85,
-      handling: 70,
-      driftFactor: 75,
-      turnFactor: 60,
-      maxSpeed: 220
-    },
-    parts: [],
-    price: 0.015,
-    seller: '0x8765...4321',
-    condition: 85,
-    listedAt: new Date().getTime() - 86400000
-  },
-  {
-    id: '3',
-    carImageURI: '/car3.png',
-    combinedStats: {
-      speed: 95,
-      acceleration: 90,
-      handling: 85,
-      driftFactor: 80,
-      turnFactor: 75,
-      maxSpeed: 240
-    },
-    parts: [],
-    price: 0.02,
-    seller: '0x9876...1234',
-    condition: 95,
-    listedAt: new Date().getTime() - 172800000
-  }
-];
+import { MarketplaceCarCard } from '../components/MarketplaceCarCard';
 
 type SortOption = 'price-asc' | 'price-desc' | 'condition-desc' | 'recent';
 type FilterOption = 'all' | 'high-speed' | 'high-handling' | 'perfect-condition';
@@ -109,20 +55,6 @@ export function MarketplacePage() {
     }
   };
 
-  const handleListCar = async (carId: string, price: number, includeSlots: boolean[]) => {
-    try {
-      setIsLoading(true);
-      await marketplaceService.listCar(carId, price, includeSlots);
-      toast.success('Car listed successfully!');
-      await loadMarketplaceData();
-    } catch (error) {
-      console.error('Error listing car:', error);
-      toast.error('Error listing car');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleCancelListing = async (carId: string) => {
     try {
       setIsLoading(true);
@@ -134,25 +66,6 @@ export function MarketplacePage() {
       toast.error('Error cancelling listing');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const calculateAverageStats = (car: Car) => {
-    try {
-      const stats = car.combinedStats || {};
-      const validStats = [
-        stats.speed,
-        stats.acceleration,
-        stats.handling
-      ].filter(stat => typeof stat === 'number' && !isNaN(stat));
-      
-      if (validStats.length === 0) return 0;
-      
-      const total = validStats.reduce((sum, stat) => sum + stat, 0);
-      return Math.round(total / validStats.length);
-    } catch (error) {
-      console.error('Error calculating statistics:', error);
-      return 0;
     }
   };
 
@@ -311,19 +224,19 @@ export function MarketplacePage() {
                 <div className="bg-gray-800 p-4 rounded-lg">
                   <h3 className="text-gray-400 text-sm">Average Price</h3>
                   <p className="text-2xl font-bold text-white">
-                    {(cars.reduce((acc, car) => acc + (car.price || 0), 0) / cars.length).toFixed(3)} GRASS
+                    {cars.length > 0 ? (cars.reduce((acc, car) => acc + (car.price || 0), 0) / cars.length).toFixed(3) : '0'} GRASS
                   </p>
                 </div>
                 <div className="bg-gray-800 p-4 rounded-lg">
                   <h3 className="text-gray-400 text-sm">Best Speed</h3>
                   <p className="text-2xl font-bold text-white">
-                    {Math.max(...cars.map(car => car.combinedStats.speed))}
+                    {cars.length > 0 ? Math.max(...cars.map(car => car.combinedStats.speed)) : '0'}
                   </p>
                 </div>
                 <div className="bg-gray-800 p-4 rounded-lg">
                   <h3 className="text-gray-400 text-sm">Best Handling</h3>
                   <p className="text-2xl font-bold text-white">
-                    {Math.max(...cars.map(car => car.combinedStats.handling))}
+                    {cars.length > 0 ? Math.max(...cars.map(car => car.combinedStats.handling)) : '0'}
                   </p>
                 </div>
               </div>
@@ -335,74 +248,27 @@ export function MarketplacePage() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
                     <p className="text-gray-400">Loading marketplace data...</p>
                   </div>
+                ) : filteredCars.length === 0 ? (
+                  <div className="text-center py-20">
+                    <p className="text-gray-400">No cars found</p>
+                  </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredCars.map((car) => (
-                      <div key={car.id} className="bg-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                        <div className="relative">
-                          <img
-                            src={car.carImageURI}
-                            alt={`Car ${car.id}`}
-                            className="w-full h-48 object-contain rounded-lg mb-4"
-                          />
-                          <div className="absolute top-2 right-2">
-                            <Speedometer value={calculateAverageStats(car)} size={60} />
-                          </div>
-                          <div className="absolute top-2 left-2 bg-gray-900/80 px-3 py-1 rounded-full">
-                            <span className="text-sm text-gray-300">ID: #{car.id}</span>
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-gray-700 p-3 rounded-lg">
-                              <span className="text-gray-400 text-sm">Speed</span>
-                              <p className="text-white font-bold">{car.combinedStats?.speed || 0}</p>
-                            </div>
-                            <div className="bg-gray-700 p-3 rounded-lg">
-                              <span className="text-gray-400 text-sm">Acceleration</span>
-                              <p className="text-white font-bold">{car.combinedStats?.acceleration || 0}</p>
-                            </div>
-                            <div className="bg-gray-700 p-3 rounded-lg">
-                              <span className="text-gray-400 text-sm">Handling</span>
-                              <p className="text-white font-bold">{car.combinedStats?.handling || 0}</p>
-                            </div>
-                            <div className="bg-gray-700 p-3 rounded-lg">
-                              <span className="text-gray-400 text-sm">Condition</span>
-                              <p className="text-white font-bold">{car.condition}%</p>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center bg-gray-700 p-3 rounded-lg">
-                            <div>
-                              <span className="text-gray-400 text-sm">Price</span>
-                              <p className="text-white font-bold">{car.price} GRASS</p>
-                            </div>
-                            {car.seller === address ? (
-                              <button 
-                                onClick={() => handleCancelListing(car.id)}
-                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-                                disabled={isLoading}
-                              >
-                                Cancel
-                              </button>
-                            ) : (
-                              <button 
-                                onClick={() => car.price ? handleBuyCar(car.id, car.price) : null}
-                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-                                disabled={isLoading || !car.price}
-                              >
-                                Buy
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="text-sm text-gray-400">
-                            <p>Seller: {car.seller}</p>
-                            <p>Listed {Math.floor((new Date().getTime() - (car.listedAt || 0)) / 86400000)} days ago</p>
-                          </div>
-                        </div>
-                      </div>
+                      <MarketplaceCarCard
+                        key={car.id}
+                        id={car.id}
+                        imageUrl={car.carImageURI || '/default-car.png'}
+                        stats={car.combinedStats}
+                        parts={car.parts || []}
+                        price={car.price || 0}
+                        seller={car.seller || 'Unknown'}
+                        condition={car.condition}
+                        listedAt={car.listedAt || Date.now()}
+                        onBuy={() => car.price ? handleBuyCar(car.id, car.price) : null}
+                        onCancel={() => handleCancelListing(car.id)}
+                        isOwner={car.seller?.toLowerCase() === address?.toLowerCase()}
+                      />
                     ))}
                   </div>
                 )}
