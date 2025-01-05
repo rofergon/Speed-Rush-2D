@@ -51,13 +51,6 @@ class PartsService {
           const isEquipped = await carPartContract.isEquipped(i);
           const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(i) : null;
 
-          console.log(`Part ${i} found:`, {
-            id: i.toString(),
-            partType: Number(partStats.partType),
-            isEquipped,
-            equippedToCarId: equippedToCarId?.toString() || null
-          });
-
           allParts.set(i.toString(), {
             id: i.toString(),
             partType: Number(partStats.partType),
@@ -79,14 +72,6 @@ class PartsService {
         }
         return Number(a.id) - Number(b.id);
       });
-
-      console.log('Total parts found:', partsArray.length);
-      console.log('Parts breakdown:', partsArray.map(p => ({
-        id: p.id,
-        type: p.partType,
-        equipped: p.isEquipped,
-        inCar: p.equippedToCarId
-      })));
 
       return partsArray;
     } catch (error) {

@@ -125,16 +125,13 @@ class Web3Service {
       
       // Obtener el balance de NFTs del usuario
       const balance = await contract.balanceOf(address);
-      console.log('Balance de NFTs:', balance.toString());
 
       if (balance === 0n) {
-        console.log('El usuario no tiene carros');
         return [];
       }
 
       // Obtener el último ID de token
       const lastTokenId = await contract.getLastTokenId();
-      console.log('Último ID de token:', lastTokenId.toString());
 
       // Buscar todos los tokens del usuario
       const carIds = [];
@@ -149,8 +146,6 @@ class Web3Service {
           continue;
         }
       }
-
-      console.log('IDs de carros encontrados:', carIds);
       
       // Obtener detalles de cada carro
       const cars = await Promise.all(carIds.map(async (carId: bigint) => {
@@ -196,7 +191,6 @@ class Web3Service {
             parts: parts.filter(part => part !== null)
           };
         } catch (error) {
-          console.error('Error al obtener detalles del carro:', carId.toString(), error);
           return null;
         }
       }));
@@ -235,8 +229,6 @@ class Web3Service {
 
   async equipPart(carId: string, partId: string, slotIndex: number): Promise<void> {
     try {
-      console.log('Parámetros recibidos:', { carId, partId, slotIndex });
-      
       // Validar que los parámetros no sean undefined
       if (!carId || !partId || slotIndex === undefined) {
         throw new Error(`Parámetros inválidos: carId=${carId}, partId=${partId}, slotIndex=${slotIndex}`);
@@ -255,21 +247,12 @@ class Web3Service {
         slotIndexBigInt = BigInt(slotIndex);
       } catch (e) {
         const error = e instanceof Error ? e.message : 'Error desconocido';
-        console.error('Error convirtiendo a BigInt:', { carId, partId, slotIndex });
         throw new Error(`Error convirtiendo a BigInt: ${error}`);
       }
 
-      console.log('Valores convertidos:', { 
-        carIdBigInt: carIdBigInt.toString(), 
-        partIdBigInt: partIdBigInt.toString(), 
-        slotIndexBigInt: slotIndexBigInt.toString() 
-      });
-
       // Llamar al contrato con los parámetros convertidos
       const tx = await contract.equipPart(carIdBigInt, partIdBigInt, slotIndexBigInt);
-      console.log('Transacción enviada:', tx.hash);
       await tx.wait();
-      console.log('Parte equipada exitosamente');
     } catch (error) {
       console.error('Error equipping part:', error);
       throw error;

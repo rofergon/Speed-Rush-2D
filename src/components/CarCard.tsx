@@ -53,22 +53,15 @@ export const CarCard: React.FC<CarCardProps> = ({
   isSelected,
   alternativeSkin
 }) => {
-  // Función para obtener la parte equipada en un slot específico
   const getEquippedPart = (slotType: number) => {
     return parts.find(part => part.partType === slotType);
   };
 
-  // Función para obtener las partes disponibles para un slot específico
   const getAvailablePartsForSlot = (slotType: number) => {
-    console.log('Partes disponibles para slot', slotType, ':', 
-      availableParts.filter(part => part.partType === slotType && !part.isEquipped)
-        .map(p => ({ id: p.id, type: p.partType }))
-    );
     return availableParts.filter(part => part.partType === slotType && !part.isEquipped);
   };
 
   const handlePartEquip = (partId: string, slotType: number) => {
-    console.log('CarCard: Equipando parte', { partId, slotType });
     onEquipPart(partId, slotType);
   };
 
