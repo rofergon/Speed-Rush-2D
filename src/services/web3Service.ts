@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { Part } from '../types/parts';
 
 export interface CarGenerationData {
   carImageURI: string;
@@ -14,61 +15,91 @@ export interface PartData {
 }
 
 class Web3Service {
-  private provider: ethers.BrowserProvider;
+  private provider: ethers.BrowserProvider | null = null;
   private carNFTContract: ethers.Contract | null = null;
   private carPartContract: ethers.Contract | null = null;
 
-  constructor() {
-    if (!window.ethereum) {
-      throw new Error('MetaMask no está instalado');
+  async getProvider() {
+    if (!this.provider) {
+      if (!window.ethereum) {
+        throw new Error('MetaMask no está instalado');
+      }
+      this.provider = new ethers.BrowserProvider(window.ethereum);
     }
-    this.provider = new ethers.BrowserProvider(window.ethereum);
-    console.log('web3Service: Provider inicializado');
+    return this.provider;
+  }
+
+  async getSigner() {
+    const provider = await this.getProvider();
+    return provider.getSigner();
+  }
+
+  async getAddress() {
+    const provider = await this.getProvider();
+    const signer = await provider.getSigner();
+    return await signer.getAddress();
+  }
+
+  async getBalance(address: string): Promise<bigint> {
+    const provider = await this.getProvider();
+    return await provider.getBalance(address);
+  }
+
+  async getMintPrice(): Promise<bigint> {
+    const contract = await this.getCarNFTContract();
+    return await contract.mintPrice();
+  }
+
+  async mintCar(address: string, carData: CarGenerationData, value: string): Promise<void> {
+    try {
+      const contract = await this.getCarNFTContract();
+      const tx = await contract.mintCar(
+        carData.carImageURI,
+        carData.parts.map(part => ({
+          partType: part.partType,
+          stat1: part.stat1,
+          stat2: part.stat2,
+          stat3: part.stat3,
+          imageURI: part.imageURI
+        })),
+        { value }
+      );
+      await tx.wait();
+    } catch (error) {
+      console.error('Error minting car:', error);
+      throw error;
+    }
   }
 
   private async getCarNFTContract(): Promise<ethers.Contract> {
     if (!this.carNFTContract) {
-      try {
-        console.log('web3Service: Obteniendo signer...');
-        const signer = await this.provider.getSigner();
-        console.log('web3Service: Signer obtenido:', await signer.getAddress());
-        
-        const address = import.meta.env.VITE_CAR_NFT_ADDRESS;
-        console.log('web3Service: Creando contrato CarNFT con dirección:', address);
-        
-        if (!address) {
-          throw new Error('CarNFT contract address not found in environment variables');
-        }
-
-        this.carNFTContract = new ethers.Contract(
-          address,
-          [
-            "function mintPrice() view returns (uint256)",
-            "function mintCar(string memory carImageURI, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] memory partsData) payable",
-            "function setMintPrice(uint256 _newPrice)",
-            "function balanceOf(address owner) view returns (uint256)",
-            "function ownerOf(uint256 tokenId) view returns (address)",
-            "function getCarsByOwner(address owner) view returns (uint256[])",
-            "function getCarComposition(uint256 carId) view returns (uint256[] partIds, string carImageURI, bool[] slotOccupied)",
-            "function getFullCarMetadata(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats))",
-            "function equipPart(uint256 carId, uint256 partId, uint256 slotIndex)",
-            "function unequipPart(uint256 carId, uint256 partId)",
-            "function getLastTokenId() view returns (uint256)"
-          ],
-          signer
-        );
-        console.log('web3Service: Contrato CarNFT creado');
-      } catch (error) {
-        console.error('web3Service: Error al crear el contrato:', error);
-        throw error;
-      }
+      const signer = await this.getSigner();
+      this.carNFTContract = new ethers.Contract(
+        import.meta.env.VITE_CAR_NFT_ADDRESS,
+        [
+          "function mintPrice() view returns (uint256)",
+          "function mintCar(string memory carImageURI, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] memory partsData) payable",
+          "function setMintPrice(uint256 _newPrice)",
+          "function balanceOf(address owner) view returns (uint256)",
+          "function ownerOf(uint256 tokenId) view returns (address)",
+          "function getCarsByOwner(address owner) view returns (uint256[])",
+          "function getCarComposition(uint256 carId) view returns (uint256[] partIds, string carImageURI, bool[] slotOccupied)",
+          "function getFullCarMetadata(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats))",
+          "function equipPart(uint256 carId, uint256 partId, uint256 slotIndex)",
+          "function unequipPart(uint256 carId, uint256 partId)",
+          "function getLastTokenId() view returns (uint256)",
+          "function getCar(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats))",
+          "function tokenURI(uint256 tokenId) view returns (string)"
+        ],
+        signer
+      );
     }
     return this.carNFTContract;
   }
 
-  public async getCarPartContract(): Promise<ethers.Contract> {
+  async getCarPartContract(): Promise<ethers.Contract> {
     if (!this.carPartContract) {
-      const signer = await this.provider.getSigner();
+      const signer = await this.getSigner();
       this.carPartContract = new ethers.Contract(
         import.meta.env.VITE_CAR_PART_ADDRESS,
         [
@@ -85,42 +116,6 @@ class Web3Service {
       );
     }
     return this.carPartContract;
-  }
-
-  async getMintPrice(): Promise<bigint> {
-    try {
-      const contract = await this.getCarNFTContract();
-      const price = await contract.mintPrice();
-      return price;
-    } catch (error) {
-      console.error('Error getting mint price:', error);
-      throw error;
-    }
-  }
-
-  async setMintPrice(newPrice: bigint): Promise<void> {
-    try {
-      const contract = await this.getCarNFTContract();
-      const tx = await contract.setMintPrice(newPrice);
-      await tx.wait();
-    } catch (error) {
-      console.error('Error setting mint price:', error);
-      throw error;
-    }
-  }
-
-  async mintCar(address: string, carData: CarGenerationData, mintPriceWei: string): Promise<string> {
-    try {
-      const contract = await this.getCarNFTContract();
-      const tx = await contract.mintCar(carData.carImageURI, carData.parts, {
-        value: mintPriceWei
-      });
-      await tx.wait();
-      return tx.hash;
-    } catch (error) {
-      console.error('Error minting car:', error);
-      throw error;
-    }
   }
 
   async getUserCars(address: string): Promise<any[]> {
@@ -160,59 +155,30 @@ class Web3Service {
       // Obtener detalles de cada carro
       const cars = await Promise.all(carIds.map(async (carId: bigint) => {
         try {
-          console.log(`\nObteniendo detalles del carro ${carId.toString()}:`);
-          
           // Obtener composición del carro
           const [partIds, carImageURI, slotOccupied] = await contract.getCarComposition(carId);
-          console.log('Composición del carro:');
-          console.log('- Parts IDs:', partIds.map((id: bigint) => id.toString()));
-          console.log('- Slots ocupados:', slotOccupied);
           
           // Obtener detalles de las partes
-          console.log('\nDetalles de las partes:');
           const parts = await Promise.all(partIds.map(async (partId: bigint, index: number) => {
-            if (!slotOccupied[index]) {
-              console.log(`Slot ${index}: Vacío`);
-              return null;
-            }
+            if (!slotOccupied[index]) return null;
             
             const partStats = await carPartContract.getPartStats(partId);
             const isEquipped = await carPartContract.isEquipped(partId);
             const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(partId) : null;
             
-            console.log(`\nParte ${partId.toString()} (Slot ${index}):`);
-            console.log('- Tipo:', partStats.partType);
-            console.log('- Stats:', {
-              stat1: Number(partStats.stat1),
-              stat2: Number(partStats.stat2),
-              stat3: Number(partStats.stat3)
-            });
-            console.log('- Equipada:', isEquipped);
-            if (isEquipped) console.log('- Equipada en carro:', equippedToCarId?.toString());
-            
             return {
-              partId: partId.toString(),
+              id: partId.toString(),
               partType: Number(partStats.partType),
               imageURI: partStats.imageURI,
               stats: this.mapPartStats(partStats),
               isEquipped,
-              equippedToCarId: equippedToCarId?.toString()
+              equippedToCarId: equippedToCarId?.toString(),
+              slotIndex: index
             };
           }));
 
           // Obtener metadata completa
-          console.log('\nObteniendo metadata completa...');
           const metadata = await contract.getFullCarMetadata(carId);
-          console.log('Metadata del carro:');
-          console.log('- Condición:', Number(metadata.condition));
-          console.log('- Stats combinados:', {
-            speed: Number(metadata.combinedStats.speed),
-            acceleration: Number(metadata.combinedStats.acceleration),
-            handling: Number(metadata.combinedStats.handling),
-            driftFactor: Number(metadata.combinedStats.driftFactor),
-            turnFactor: Number(metadata.combinedStats.turnFactor),
-            maxSpeed: Number(metadata.combinedStats.maxSpeed)
-          });
 
           return {
             id: carId.toString(),
@@ -231,10 +197,6 @@ class Web3Service {
           };
         } catch (error) {
           console.error('Error al obtener detalles del carro:', carId.toString(), error);
-          if (error instanceof Error) {
-            console.log('Mensaje de error:', error.message);
-            console.log('Stack:', error.stack);
-          }
           return null;
         }
       }));
@@ -273,155 +235,87 @@ class Web3Service {
 
   async equipPart(carId: string, partId: string, slotIndex: number): Promise<void> {
     try {
-      console.log('web3Service: Iniciando equipPart', { carId, partId, slotIndex });
+      console.log('Parámetros recibidos:', { carId, partId, slotIndex });
       
-      // Verificar que el proveedor esté conectado
-      const accounts = await this.provider.listAccounts();
-      if (accounts.length === 0) {
-        throw new Error('No hay cuentas conectadas');
+      // Validar que los parámetros no sean undefined
+      if (!carId || !partId || slotIndex === undefined) {
+        throw new Error(`Parámetros inválidos: carId=${carId}, partId=${partId}, slotIndex=${slotIndex}`);
       }
-      const userAddress = accounts[0].address;
-      console.log('web3Service: Cuenta conectada:', userAddress);
 
       const contract = await this.getCarNFTContract();
-      const carPartContract = await this.getCarPartContract();
+      if (!contract) {
+        throw new Error('Contract not initialized');
+      }
 
       // Convertir los parámetros a BigInt
-      const carIdBigInt = BigInt(carId);
-      const partIdBigInt = BigInt(partId);
-      console.log('web3Service: Parámetros convertidos:', {
-        carIdBigInt: carIdBigInt.toString(),
-        partIdBigInt: partIdBigInt.toString(),
-        slotIndex
+      let carIdBigInt: bigint, partIdBigInt: bigint, slotIndexBigInt: bigint;
+      try {
+        carIdBigInt = BigInt(carId);
+        partIdBigInt = BigInt(partId);
+        slotIndexBigInt = BigInt(slotIndex);
+      } catch (e) {
+        const error = e instanceof Error ? e.message : 'Error desconocido';
+        console.error('Error convirtiendo a BigInt:', { carId, partId, slotIndex });
+        throw new Error(`Error convirtiendo a BigInt: ${error}`);
+      }
+
+      console.log('Valores convertidos:', { 
+        carIdBigInt: carIdBigInt.toString(), 
+        partIdBigInt: partIdBigInt.toString(), 
+        slotIndexBigInt: slotIndexBigInt.toString() 
       });
 
-      // Verificar que el carro existe y pertenece al usuario
-      try {
-        const exists = await contract.ownerOf(carIdBigInt).then(() => true).catch(() => false);
-        console.log('web3Service: ¿El carro existe?:', exists);
-        if (!exists) {
-          throw new Error('El carro no existe');
-        }
-
-        const carOwner = await contract.ownerOf(carIdBigInt);
-        console.log('web3Service: Dueño del carro:', { carOwner, userAddress });
-        if (carOwner.toLowerCase() !== userAddress.toLowerCase()) {
-          throw new Error('No eres el dueño del carro');
-        }
-      } catch (error) {
-        console.error('web3Service: Error verificando dueño del carro:', error);
-        throw error;
-      }
-
-      // Verificar que la parte existe y pertenece al usuario
-      try {
-        const exists = await carPartContract.ownerOf(partIdBigInt).then(() => true).catch(() => false);
-        console.log('web3Service: ¿La parte existe?:', exists);
-        if (!exists) {
-          throw new Error('La parte no existe');
-        }
-
-        const partOwner = await carPartContract.ownerOf(partIdBigInt);
-        console.log('web3Service: Dueño de la parte:', { partOwner, userAddress });
-        if (partOwner.toLowerCase() !== userAddress.toLowerCase()) {
-          throw new Error('No eres el dueño de la parte');
-        }
-      } catch (error) {
-        console.error('web3Service: Error verificando dueño de la parte:', error);
-        throw error;
-      }
-
-      // Verificar que la parte no está equipada
-      try {
-        const isEquipped = await carPartContract.isEquipped(partIdBigInt);
-        console.log('web3Service: Estado de la parte:', { isEquipped });
-        if (isEquipped) {
-          const equippedCarId = await carPartContract.getEquippedCar(partIdBigInt);
-          console.log('web3Service: La parte está equipada en el carro:', equippedCarId.toString());
-          throw new Error('La parte ya está equipada en otro carro');
-        }
-      } catch (error) {
-        console.error('web3Service: Error verificando estado de la parte:', error);
-        throw error;
-      }
-
-      // Verificar que el slot no está ocupado
-      try {
-        const [partIds, , slotOccupied] = await contract.getCarComposition(carIdBigInt);
-        console.log('web3Service: Composición del carro:', { 
-          partIds: partIds.map((id: bigint) => id.toString()), 
-          slotOccupied 
-        });
-        if (slotOccupied[slotIndex]) {
-          console.log('web3Service: El slot', slotIndex, 'está ocupado con la parte', partIds[slotIndex].toString());
-          throw new Error('El slot ya está ocupado');
-        }
-      } catch (error) {
-        console.error('web3Service: Error verificando slot:', error);
-        throw error;
-      }
-
-      // Verificar que el tipo de parte coincide con el slot
-      try {
-        const partStats = await carPartContract.getPartStats(partIdBigInt);
-        const partType = Number(partStats.partType);
-        console.log('web3Service: Tipo de parte:', { partType, slotIndex });
-        if (partType !== slotIndex) {
-          throw new Error(`El tipo de parte (${partType}) no coincide con el slot (${slotIndex})`);
-        }
-      } catch (error) {
-        console.error('web3Service: Error verificando tipo de parte:', error);
-        throw error;
-      }
-
-      console.log('web3Service: Todas las validaciones pasaron, llamando a equipPart');
-      const tx = await contract.equipPart(carIdBigInt, partIdBigInt, slotIndex);
-      console.log('web3Service: Transacción enviada:', tx.hash);
-      
-      const receipt = await tx.wait();
-      console.log('web3Service: Transacción confirmada:', receipt);
+      // Llamar al contrato con los parámetros convertidos
+      const tx = await contract.equipPart(carIdBigInt, partIdBigInt, slotIndexBigInt);
+      console.log('Transacción enviada:', tx.hash);
+      await tx.wait();
+      console.log('Parte equipada exitosamente');
     } catch (error) {
-      console.error('web3Service: Error equipping part:', error);
+      console.error('Error equipping part:', error);
       throw error;
     }
   }
 
   async unequipPart(carId: string, partId: string): Promise<void> {
     try {
-      console.log('web3Service: Iniciando unequipPart', { carId, partId });
-      
-      // Verificar que el proveedor esté conectado
-      const accounts = await this.provider.listAccounts();
-      if (accounts.length === 0) {
-        throw new Error('No hay cuentas conectadas');
-      }
-      console.log('web3Service: Cuenta conectada:', accounts[0].address);
-
       const contract = await this.getCarNFTContract();
-      console.log('web3Service: Contrato obtenido, llamando a unequipPart');
-      
       const tx = await contract.unequipPart(carId, partId);
-      console.log('web3Service: Transacción enviada:', tx.hash);
-      
-      const receipt = await tx.wait();
-      console.log('web3Service: Transacción confirmada:', receipt);
+      await tx.wait();
     } catch (error) {
-      console.error('web3Service: Error unequipping part:', error);
+      console.error('Error unequipping part:', error);
       throw error;
     }
   }
 
-  public async getBalance(address: string): Promise<bigint> {
-    return await this.provider.getBalance(address);
+  async getChainId() {
+    const provider = await this.getProvider();
+    const network = await provider.getNetwork();
+    return network.chainId;
   }
 
-  public async getCarParts(carId: string): Promise<any[]> {
+  async switchNetwork(chainId: number) {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: `0x${chainId.toString(16)}` }],
+      });
+    } catch (error: any) {
+      if (error.code === 4902) {
+        throw new Error('Red no configurada en MetaMask');
+      }
+      throw error;
+    }
+  }
+
+  async getCarParts(carId: string): Promise<Part[]> {
     try {
       const contract = await this.getCarNFTContract();
       const carPartContract = await this.getCarPartContract();
+      
+      // Obtener la composición del carro (IDs de partes y slots ocupados)
       const [partIds, , slotOccupied] = await contract.getCarComposition(carId);
       
-      // Obtener detalles de las partes
+      // Mapear las partes con sus detalles
       const parts = await Promise.all(partIds.map(async (partId: bigint, index: number) => {
         if (!slotOccupied[index]) return null;
         
@@ -430,16 +324,17 @@ class Web3Service {
         const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(partId) : null;
         
         return {
-          partId: partId.toString(),
+          id: partId.toString(),
           partType: Number(partStats.partType),
           imageURI: partStats.imageURI,
           stats: this.mapPartStats(partStats),
           isEquipped,
-          equippedToCarId: equippedToCarId?.toString()
+          equippedToCarId: equippedToCarId?.toString(),
+          slotIndex: index
         };
       }));
 
-      return parts.filter(part => part !== null);
+      return parts.filter((part): part is Part => part !== null);
     } catch (error) {
       console.error('Error getting car parts:', error);
       throw error;

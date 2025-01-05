@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Typography, Box, Chip, Button } from '@mui/material';
-import { PartType } from '../types/parts';
+import { Part } from '../types/parts';
+
 import SpeedIcon from '@mui/icons-material/Speed';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -10,13 +11,7 @@ import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import SettingsIcon from '@mui/icons-material/Settings';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
-interface PartCardProps {
-  partId: string;
-  partType: number;
-  stats: any;
-  isEquipped: boolean;
-  equippedToCarId?: string;
-  imageURI: string;
+interface PartCardProps extends Part {
   onEquip?: () => void;
   onUnequip?: () => void;
   canEquip?: boolean;

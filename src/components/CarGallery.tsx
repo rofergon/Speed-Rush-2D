@@ -66,12 +66,38 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
   };
 
   const handleEquipPart = async (partId: string, slotType: number) => {
-    if (!selectedCarId) return;
+    if (!selectedCarId) {
+      console.error('No hay un carro seleccionado');
+      return;
+    }
+
     try {
+      // Validar que partId no sea undefined o vacío
+      if (!partId) {
+        console.error('ID de parte inválido:', partId);
+        throw new Error('El ID de la parte es requerido');
+      }
+
+      // Validar que slotType sea un número válido
+      if (typeof slotType !== 'number' || slotType < 0) {
+        console.error('Tipo de slot inválido:', slotType);
+        throw new Error('El tipo de slot es inválido');
+      }
+
+      console.log('Intentando equipar parte:', {
+        carId: selectedCarId,
+        partId,
+        slotType,
+        tipoPartId: typeof partId,
+        tipoSlotType: typeof slotType
+      });
+
       await web3Service.equipPart(selectedCarId, partId, slotType);
+      console.log('Parte equipada correctamente');
       await loadData(); // Recargar datos después de equipar
     } catch (error) {
       console.error('Error equipando parte:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario usando un toast o similar
       throw error;
     }
   };
