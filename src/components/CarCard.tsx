@@ -12,6 +12,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { LoadingButton } from '@mui/lab';
 
 interface CarStats {
   speed: number;
@@ -71,12 +72,14 @@ interface PartSlotProps {
   onEquipPart?: (partId: string) => Promise<void>;
   onUnequipPart?: (partId: string, carId: string) => Promise<void>;
   carId: string;
+  onSelect?: () => void;
 }
 
-const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], onEquipPart, onUnequipPart, carId }) => {
+const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], onEquipPart, onUnequipPart, carId, onSelect }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUnequipDialogOpen, setIsUnequipDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const getSlotLabel = (type: number) => {
     switch (type) {
@@ -106,6 +109,9 @@ const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], on
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (onSelect) {
+      onSelect();
+    }
     if (part) {
       setIsUnequipDialogOpen(true);
     } else {
@@ -145,19 +151,15 @@ const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], on
   };
 
   const handleUnequip = async () => {
-    if (!part || !onUnequipPart || !carId) {
-      console.log('PartSlot: Falta información requerida:', { part, onUnequipPart, carId });
-      return;
-    }
+    if (!onUnequipPart || !part) return;
     
     setIsLoading(true);
+    setError(null);
     try {
-      console.log('PartSlot: Iniciando desequipamiento:', { partId: part.partId, carId });
       await onUnequipPart(part.partId, carId);
-      console.log('PartSlot: Desequipamiento completado');
       setIsUnequipDialogOpen(false);
     } catch (error: any) {
-      console.error('PartSlot: Error desequipando parte:', error);
+      console.error('Error al desequipar la parte:', error);
       // Si el error es porque MetaMask no está instalado o no hay cuentas conectadas,
       // intentamos conectar la wallet
       if (error.message.includes('MetaMask') || error.message.includes('cuentas conectadas')) {
@@ -167,8 +169,11 @@ const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], on
           await onUnequipPart(part.partId, carId);
           setIsUnequipDialogOpen(false);
         } catch (retryError) {
-          console.error('PartSlot: Error al reintentar:', retryError);
+          console.error('Error al reintentar:', retryError);
+          setError('Error al conectar con MetaMask. Por favor, intenta de nuevo.');
         }
+      } else {
+        setError('Error al desequipar la parte. Por favor, intenta de nuevo.');
       }
     } finally {
       setIsLoading(false);
@@ -606,6 +611,7 @@ export const CarCard: React.FC<CarCardProps> = ({
                 }}
                 onUnequipPart={handleUnequipPart}
                 carId={id}
+                onSelect={onSelect}
               />
               <PartSlot 
                 type={1} 
@@ -617,6 +623,7 @@ export const CarCard: React.FC<CarCardProps> = ({
                 }}
                 onUnequipPart={handleUnequipPart}
                 carId={id}
+                onSelect={onSelect}
               />
               <PartSlot 
                 type={2} 
@@ -628,6 +635,7 @@ export const CarCard: React.FC<CarCardProps> = ({
                 }}
                 onUnequipPart={handleUnequipPart}
                 carId={id}
+                onSelect={onSelect}
               />
             </Box>
           </Grid>
