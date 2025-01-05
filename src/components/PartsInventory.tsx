@@ -25,13 +25,6 @@ export const PartsInventory: React.FC<PartsInventoryProps> = ({
   const [filterEquipped, setFilterEquipped] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  console.log('PartsInventory: Partes recibidas:', parts.map(p => ({
-    id: p.id,
-    partId: (p as any).partId,
-    type: p.partType,
-    isEquipped: p.isEquipped
-  })));
-
   const getSlotForPartType = (partType: number): number => {
     switch(partType) {
       case 0: return 0; // Engine
