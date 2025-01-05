@@ -11,12 +11,18 @@ interface CarGalleryProps {
   alternativeSkin: boolean;
   onSkinChange: (newState: boolean) => void;
   onSelectCar?: (car: Car) => void;
+  onSellCar?: (car: Car) => void;
+  listedCars?: Set<string>;
+  onCancelListing?: (carId: string) => void;
 }
 
 export const CarGallery: React.FC<CarGalleryProps> = ({
   alternativeSkin,
   onSkinChange,
-  onSelectCar
+  onSelectCar,
+  onSellCar,
+  listedCars,
+  onCancelListing
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,20 +146,29 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
   }
 
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={3}>
       {cars.map((car) => (
-        <Grid item xs={12} sm={6} md={4} lg={3} key={car.id} sx={{ minHeight: '500px' }}>
+        <Grid item xs={12} sm={6} lg={4} key={car.id}>
           <CarCard
             id={car.id}
             imageUrl={car.carImageURI}
-            stats={car.combinedStats}
-            parts={car.parts}
+            stats={{
+              speed: car.combinedStats.speed,
+              maxSpeed: car.combinedStats.maxSpeed,
+              acceleration: car.combinedStats.acceleration,
+              handling: car.combinedStats.handling,
+              driftFactor: car.combinedStats.driftFactor,
+              turnFactor: car.combinedStats.turnFactor
+            }}
+            parts={car.parts || []}
             availableParts={availableParts}
             onSelect={() => handleCarSelect(car)}
             onEquipPart={handleEquipPart}
             onUnequipPart={handleUnequipPart}
-            isSelected={selectedCarId === car.id}
+            onSell={onSellCar ? () => onSellCar(car) : undefined}
+            isSelected={car.id === selectedCarId}
             alternativeSkin={alternativeSkin}
+            isListed={listedCars?.has(car.id)}
           />
         </Grid>
       ))}

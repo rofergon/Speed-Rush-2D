@@ -18,6 +18,7 @@ class Web3Service {
   private provider: ethers.BrowserProvider | null = null;
   private carNFTContract: ethers.Contract | null = null;
   private carPartContract: ethers.Contract | null = null;
+  private marketplaceContract: ethers.Contract | null = null;
 
   async getProvider() {
     if (!this.provider) {
@@ -89,7 +90,11 @@ class Web3Service {
           "function unequipPart(uint256 carId, uint256 partId)",
           "function getLastTokenId() view returns (uint256)",
           "function getCar(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats))",
-          "function tokenURI(uint256 tokenId) view returns (string)"
+          "function tokenURI(uint256 tokenId) view returns (string)",
+          "function approve(address to, uint256 tokenId)",
+          "function getApproved(uint256 tokenId) view returns (address)",
+          "function setApprovalForAll(address operator, bool approved)",
+          "function isApprovedForAll(address owner, address operator) view returns (bool)"
         ],
         signer
       );
@@ -110,7 +115,11 @@ class Web3Service {
           "function ownerOf(uint256 tokenId) view returns (address)",
           "function balanceOf(address owner) view returns (uint256)",
           "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
-          "function getPartType(uint256 partId) view returns (uint8)"
+          "function getPartType(uint256 partId) view returns (uint8)",
+          "function approve(address to, uint256 tokenId)",
+          "function getApproved(uint256 tokenId) view returns (address)",
+          "function setApprovalForAll(address operator, bool approved)",
+          "function isApprovedForAll(address owner, address operator) view returns (bool)"
         ],
         signer
       );
@@ -322,6 +331,107 @@ class Web3Service {
       console.error('Error getting car parts:', error);
       throw error;
     }
+  }
+
+  private async getMarketplaceContract(): Promise<ethers.Contract> {
+    if (!this.marketplaceContract) {
+      const signer = await this.getSigner();
+      this.marketplaceContract = new ethers.Contract(
+        import.meta.env.VITE_CAR_MARKETPLACE_ADDRESS,
+        [
+          "function listCar(uint256 carId, uint256 price, bool[3] memory includeSlots) external",
+          "function cancelCarListing(uint256 carId) external",
+          "function carListings(uint256) view returns (address seller, uint256 carId, uint256 price, tuple(bool included, uint256 partId)[3] partSlots, bool active)",
+          "function buyCar(uint256 carId) external payable",
+          "function getListingApprovalStatus(uint256 carId, bool[3] memory includeSlots) external view returns (bool carApproved, bool[] memory partsApproved)"
+        ],
+        signer
+      );
+    }
+    return this.marketplaceContract;
+  }
+
+  async listCarForSale(carId: string, price: string, includeSlots: boolean[]): Promise<void> {
+    try {
+      const contract = await this.getMarketplaceContract();
+      const priceInWei = ethers.parseEther(price);
+      
+      // Primero verificamos las aprobaciones
+      const [carApproved, partsApproved] = await contract.getListingApprovalStatus(carId, includeSlots);
+      
+      // Si el carro no está aprobado, necesitamos aprobarlo
+      if (!carApproved) {
+        const carContract = await this.getCarNFTContract();
+        const approveTx = await carContract.approve(import.meta.env.VITE_CAR_MARKETPLACE_ADDRESS, carId);
+        await approveTx.wait();
+      }
+
+      // Si hay partes incluidas que no están aprobadas, las aprobamos
+      const carPartContract = await this.getCarPartContract();
+      for (let i = 0; i < includeSlots.length; i++) {
+        if (includeSlots[i] && !partsApproved[i]) {
+          const [partIds] = await this.getCarComposition(carId);
+          if (partIds[i]) {
+            const approveTx = await carPartContract.approve(import.meta.env.VITE_CAR_MARKETPLACE_ADDRESS, partIds[i]);
+            await approveTx.wait();
+          }
+        }
+      }
+
+      // Finalmente listamos el carro
+      const tx = await contract.listCar(carId, priceInWei, includeSlots);
+      await tx.wait();
+    } catch (error) {
+      console.error('Error listing car for sale:', error);
+      throw error;
+    }
+  }
+
+  async cancelCarListing(carId: string): Promise<void> {
+    try {
+      const contract = await this.getMarketplaceContract();
+      const tx = await contract.cancelCarListing(carId);
+      await tx.wait();
+    } catch (error) {
+      console.error('Error canceling car listing:', error);
+      throw error;
+    }
+  }
+
+  async getCarListing(carId: string): Promise<{
+    seller: string;
+    price: string;
+    isActive: boolean;
+    includedParts: boolean[];
+  } | null> {
+    try {
+      const contract = await this.getMarketplaceContract();
+      const listing = await contract.carListings(carId);
+      
+      if (!listing.active) {
+        return null;
+      }
+
+      return {
+        seller: listing.seller,
+        price: ethers.formatEther(listing.price),
+        isActive: listing.active,
+        includedParts: listing.partSlots.map((slot: any) => slot.included)
+      };
+    } catch (error) {
+      console.error('Error getting car listing:', error);
+      return null;
+    }
+  }
+
+  async getCarComposition(carId: string): Promise<[string[], string, boolean[]]> {
+    const contract = await this.getCarNFTContract();
+    const [partIds, carImageURI, slotOccupied] = await contract.getCarComposition(carId);
+    return [
+      partIds.map((id: bigint) => id.toString()),
+      carImageURI,
+      slotOccupied
+    ];
   }
 }
 

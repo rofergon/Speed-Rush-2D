@@ -26,8 +26,10 @@ interface CarCardProps {
   onSelect: () => void;
   onEquipPart: (partId: string, slotType: number) => void;
   onUnequipPart: (partId: string) => void;
+  onSell?: () => void;
   isSelected: boolean;
   alternativeSkin: boolean;
+  isListed?: boolean;
 }
 
 const StatDisplay = ({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) => (
@@ -50,8 +52,10 @@ export const CarCard: React.FC<CarCardProps> = ({
   onSelect,
   onEquipPart,
   onUnequipPart,
+  onSell,
   isSelected,
-  alternativeSkin
+  alternativeSkin,
+  isListed
 }) => {
   const getEquippedPart = (slotType: number) => {
     return parts.find(part => part.partType === slotType);
@@ -195,12 +199,12 @@ export const CarCard: React.FC<CarCardProps> = ({
           </Grid>
         </Grid>
 
-        <Box sx={{ mt: 'auto', pt: 2 }}>
+        <Box sx={{ mt: 'auto', pt: 2, display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
             onClick={onSelect}
-            fullWidth
             sx={{
+              flex: 1,
               textTransform: 'none',
               fontWeight: 600,
               background: isSelected ? 
@@ -213,6 +217,26 @@ export const CarCard: React.FC<CarCardProps> = ({
           >
             {isSelected ? 'Selected for Modification' : 'Select for Modification'}
           </Button>
+          {onSell && (
+            <Button
+              variant="contained"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSell();
+              }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                background: isListed ?
+                  'linear-gradient(45deg, #FF9800 30%, #FFC107 90%)' :
+                  'linear-gradient(45deg, #4CAF50 30%, #8BC34A 90%)',
+                boxShadow: '0 3px 5px 2px rgba(76, 175, 80, .3)',
+                minWidth: '120px'
+              }}
+            >
+              {isListed ? 'Listed' : 'Sell Car'}
+            </Button>
+          )}
         </Box>
       </Box>
     </Card>
