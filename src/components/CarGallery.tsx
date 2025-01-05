@@ -142,7 +142,7 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
   return (
     <Grid container spacing={2}>
       {cars.map((car) => (
-        <Grid item xs={12} sm={6} md={3} key={car.id}>
+        <Grid item xs={12} sm={6} md={4} lg={3} key={car.id} sx={{ minHeight: '500px' }}>
           <CarCard
             id={car.id}
             imageUrl={car.carImageURI}

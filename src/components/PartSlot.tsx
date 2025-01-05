@@ -39,7 +39,6 @@ export const PartSlot: React.FC<PartSlotProps> = ({
   };
 
   const handleEquip = (partId: string) => {
-    console.log('PartSlot: Equipando parte', { partId, type, label });
     if (!partId) {
       console.error('PartSlot: ID de parte inválido');
       return;
@@ -48,21 +47,25 @@ export const PartSlot: React.FC<PartSlotProps> = ({
     setIsDialogOpen(false);
   };
 
-  console.log('PartSlot: Partes disponibles', {
-    type,
-    label,
-    availableParts: availableParts.map(p => ({ id: p.id, type: p.partType }))
-  });
+  const handleClick = () => {
+    if (equippedPart) {
+      onUnequip(equippedPart.id);
+    } else if (availableParts.length > 0) {
+      setIsDialogOpen(true);
+    }
+  };
 
   return (
     <>
       <Box
-        onClick={() => !equippedPart && availableParts.length > 0 && setIsDialogOpen(true)}
+        onClick={handleClick}
         sx={{
           p: 1,
           border: '1px solid rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
-          background: equippedPart ? 'rgba(0, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+          background: equippedPart ? 
+            'rgba(34, 197, 94, 0.15)' : 
+            'rgba(239, 68, 68, 0.15)',
           display: 'flex',
           alignItems: 'center',
           gap: 1,
@@ -72,9 +75,13 @@ export const PartSlot: React.FC<PartSlotProps> = ({
           transition: 'all 0.2s ease-in-out',
           '&:hover': {
             border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: equippedPart ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
+            background: equippedPart ? 
+              'rgba(34, 197, 94, 0.25)' : 
+              'rgba(239, 68, 68, 0.25)',
             transform: 'translateY(-1px)',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+            boxShadow: equippedPart ?
+              '0 2px 8px rgba(34, 197, 94, 0.2)' :
+              '0 2px 8px rgba(239, 68, 68, 0.2)'
           }
         }}
       >
@@ -117,29 +124,6 @@ export const PartSlot: React.FC<PartSlotProps> = ({
             {equippedPart ? `#${equippedPart.id}` : 'Empty'}
           </Typography>
         </Box>
-        {equippedPart ? (
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              onUnequip(equippedPart.id);
-            }}
-            sx={{
-              ml: 'auto',
-              minWidth: 'auto',
-              color: 'rgba(255, 255, 255, 0.8)',
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(5px)',
-              '&:hover': {
-                borderColor: 'rgba(255, 255, 255, 0.3)',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)'
-              }
-            }}
-          >
-            ×
-          </Button>
-        ) : null}
       </Box>
 
       <Dialog

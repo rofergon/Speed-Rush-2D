@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Typography, Box, Button, Chip } from '@mui/material';
+import { Card, Typography, Box, Button, Chip, Grid } from '@mui/material';
 import SpeedIcon from '@mui/icons-material/Speed';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -31,7 +31,7 @@ interface CarCardProps {
 }
 
 const StatDisplay = ({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) => (
-  <Box display="flex" alignItems="center" gap={1}>
+  <Box display="flex" alignItems="center" gap={1} sx={{ minWidth: '120px' }}>
     <Box color="text.secondary" display="flex" alignItems="center">
       {icon}
     </Box>
@@ -83,12 +83,18 @@ export const CarCard: React.FC<CarCardProps> = ({
         overflow: 'hidden',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         cursor: 'pointer',
-        backgroundColor: alternativeSkin ? '#2C3E50' : '#1A1A1A',
+        backgroundColor: alternativeSkin ? 
+          'rgba(30, 41, 59, 0.85)' : // Azul grisáceo oscuro
+          'rgba(15, 23, 42, 0.85)', // Versión más oscura
+        backdropFilter: 'blur(10px)',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
           transition: 'all 0.2s ease-in-out',
-          borderColor: isSelected ? '#f44336' : 'rgba(255, 255, 255, 0.3)'
+          borderColor: isSelected ? '#f44336' : 'rgba(255, 255, 255, 0.3)',
+          backgroundColor: alternativeSkin ? 
+            'rgba(30, 41, 59, 0.95)' : 
+            'rgba(15, 23, 42, 0.95)',
         }
       }}
       onClick={onSelect}
@@ -104,18 +110,20 @@ export const CarCard: React.FC<CarCardProps> = ({
             right: 8,
             backgroundColor: 'rgba(244, 67, 54, 0.9)',
             backdropFilter: 'blur(4px)',
+            zIndex: 1,
             '& .MuiChip-label': {
               fontWeight: 500
             }
           }}
         />
       )}
+      
       <Box 
         sx={{
           position: 'relative',
-          paddingTop: '75%', // 4:3 Aspect Ratio
+          paddingTop: '60%',
           overflow: 'hidden',
-          background: 'linear-gradient(45deg, rgba(0,0,0,0.2), rgba(244, 67, 54, 0.1))'
+          background: 'linear-gradient(45deg, rgba(0,0,0,0.1), rgba(244, 67, 54, 0.05))'
         }}
       >
         <Box
@@ -127,97 +135,92 @@ export const CarCard: React.FC<CarCardProps> = ({
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: '90%',
-            height: '90%',
+            width: '85%',
+            height: '85%',
             objectFit: 'contain',
             filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))'
           }}
         />
       </Box>
 
-      <Box 
-        sx={{ 
-          p: 2,
-          background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)'
-        }}
-      >
-        <Box 
-          sx={{ 
-            mb: 2,
-            pb: 2,
-            borderBottom: '1px solid rgba(255,255,255,0.1)'
+      <Box sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Typography 
+          variant="h6" 
+          component="div" 
+          fontWeight="bold" 
+          color="white"
+          sx={{
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            mb: 2
           }}
         >
-          <Typography 
-            variant="h6" 
-            component="div" 
-            fontWeight="bold" 
-            color="white"
+          <SportsScoreIcon /> Car #{id}
+        </Typography>
+
+        <Grid container spacing={2}>
+          <Grid item xs={7}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <StatDisplay label="Speed" value={stats.speed} icon={<SpeedIcon />} />
+              <StatDisplay label="Max Speed" value={stats.maxSpeed} icon={<DirectionsCarIcon />} />
+              <StatDisplay label="Acceleration" value={stats.acceleration} icon={<RocketLaunchIcon />} />
+              <StatDisplay label="Handling" value={stats.handling} icon={<TuneIcon />} />
+              <StatDisplay label="Drift Factor" value={stats.driftFactor} icon={<CompareArrowsIcon />} />
+              <StatDisplay label="Turn Factor" value={stats.turnFactor} icon={<TurnSlightRightIcon />} />
+            </Box>
+          </Grid>
+
+          <Grid item xs={5}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <PartSlot
+                type={0}
+                label="Motor"
+                equippedPart={getEquippedPart(0)}
+                availableParts={getAvailablePartsForSlot(0)}
+                onEquip={(partId: string) => handlePartEquip(partId, 0)}
+                onUnequip={onUnequipPart}
+              />
+              <PartSlot
+                type={1}
+                label="Transmission"
+                equippedPart={getEquippedPart(1)}
+                availableParts={getAvailablePartsForSlot(1)}
+                onEquip={(partId: string) => handlePartEquip(partId, 1)}
+                onUnequip={onUnequipPart}
+              />
+              <PartSlot
+                type={2}
+                label="Core"
+                equippedPart={getEquippedPart(2)}
+                availableParts={getAvailablePartsForSlot(2)}
+                onEquip={(partId: string) => handlePartEquip(partId, 2)}
+                onUnequip={onUnequipPart}
+              />
+            </Box>
+          </Grid>
+        </Grid>
+
+        <Box sx={{ mt: 'auto', pt: 2 }}>
+          <Button
+            variant="contained"
+            onClick={onSelect}
+            fullWidth
             sx={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
+              textTransform: 'none',
+              fontWeight: 600,
+              background: isSelected ? 
+                'linear-gradient(45deg, #f44336 30%, #ff1744 90%)' : 
+                'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              boxShadow: isSelected ?
+                '0 3px 5px 2px rgba(244, 67, 54, .3)' :
+                '0 3px 5px 2px rgba(33, 203, 243, .3)'
             }}
           >
-            <SportsScoreIcon /> Car #{id}
-          </Typography>
+            {isSelected ? 'Selected for Modification' : 'Select for Modification'}
+          </Button>
         </Box>
-
-        <Box className="space-y-1.5 mb-4">
-          <StatDisplay label="Speed" value={stats.speed} icon={<SpeedIcon />} />
-          <StatDisplay label="Max Speed" value={stats.maxSpeed} icon={<DirectionsCarIcon />} />
-          <StatDisplay label="Acceleration" value={stats.acceleration} icon={<RocketLaunchIcon />} />
-          <StatDisplay label="Handling" value={stats.handling} icon={<TuneIcon />} />
-          <StatDisplay label="Drift Factor" value={stats.driftFactor} icon={<CompareArrowsIcon />} />
-          <StatDisplay label="Turn Factor" value={stats.turnFactor} icon={<TurnSlightRightIcon />} />
-        </Box>
-
-        {/* Slots de partes */}
-        <Box sx={{ mb: 2 }}>
-          <PartSlot
-            type={0}
-            label="Motor"
-            equippedPart={getEquippedPart(0)}
-            availableParts={getAvailablePartsForSlot(0)}
-            onEquip={(partId: string) => handlePartEquip(partId, 0)}
-            onUnequip={onUnequipPart}
-          />
-          <PartSlot
-            type={1}
-            label="Transmission"
-            equippedPart={getEquippedPart(1)}
-            availableParts={getAvailablePartsForSlot(1)}
-            onEquip={(partId: string) => handlePartEquip(partId, 1)}
-            onUnequip={onUnequipPart}
-          />
-          <PartSlot
-            type={2}
-            label="Core"
-            equippedPart={getEquippedPart(2)}
-            availableParts={getAvailablePartsForSlot(2)}
-            onEquip={(partId: string) => handlePartEquip(partId, 2)}
-            onUnequip={onUnequipPart}
-          />
-        </Box>
-
-        <Button
-          variant="contained"
-          onClick={onSelect}
-          fullWidth
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            background: isSelected ? 
-              'linear-gradient(45deg, #f44336 30%, #ff1744 90%)' : 
-              'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-            boxShadow: isSelected ?
-              '0 3px 5px 2px rgba(244, 67, 54, .3)' :
-              '0 3px 5px 2px rgba(33, 203, 243, .3)'
-          }}
-        >
-          {isSelected ? 'Selected for Modification' : 'Select for Modification'}
-        </Button>
       </Box>
     </Card>
   );
