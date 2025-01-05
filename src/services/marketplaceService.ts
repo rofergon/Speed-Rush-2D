@@ -35,6 +35,32 @@ class MarketplaceService {
     return this.contract;
   }
 
+  async isCarListed(carId: string): Promise<boolean> {
+    try {
+      const contract = await this.init();
+      if (!contract) return false;
+
+      const [, , , active] = await contract.carListings(carId);
+      return active;
+    } catch (error) {
+      console.error(`Error checking if car ${carId} is listed:`, error);
+      return false;
+    }
+  }
+
+  async getCarListingPrice(carId: string): Promise<number | null> {
+    try {
+      const contract = await this.init();
+      if (!contract) return null;
+
+      const [, , price, active] = await contract.carListings(carId);
+      return active ? Number(ethers.formatEther(price)) : null;
+    } catch (error) {
+      console.error(`Error getting car ${carId} listing price:`, error);
+      return null;
+    }
+  }
+
   async getListedCars(): Promise<Car[]> {
     const contract = await this.init();
     if (!contract) return [];
