@@ -114,7 +114,8 @@ class Web3Service {
           "function exists(uint256 partId) view returns (bool)",
           "function ownerOf(uint256 tokenId) view returns (address)",
           "function balanceOf(address owner) view returns (uint256)",
-          "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
+          "function getOwnerEquippedParts(address owner) view returns (uint256[])",
+          "function getOwnerUnequippedParts(address owner) view returns (uint256[])",
           "function getPartType(uint256 partId) view returns (uint8)",
           "function approve(address to, uint256 tokenId)",
           "function getApproved(uint256 tokenId) view returns (address)",
@@ -302,26 +303,40 @@ class Web3Service {
   async getCarParts(carId: string): Promise<Part[]> {
     try {
       const contract = await this.getCarNFTContract();
+      const carPartContract = await this.getCarPartContract();
       
       // Obtener metadata completa del carro que incluye las partes
       const metadata = await contract.getFullCarMetadata(carId);
       
+      // Obtener la composición actual del carro para verificar slots ocupados
+      const [partIds, , slotOccupied] = await contract.getCarComposition(carId);
+      
       // Mapear las partes a nuestro formato
-      const parts = metadata.parts.map((part: any) => ({
-        id: part.partId.toString(),
-        partType: Number(part.partType),
-        imageURI: part.imageURI,
-        stats: this.mapPartStats({
-          partType: part.partType,
-          stat1: part.stats.speed || part.stats.transmissionAcceleration || part.stats.handling,
-          stat2: part.stats.maxSpeed || part.stats.transmissionSpeed || part.stats.driftFactor,
-          stat3: part.stats.acceleration || part.stats.transmissionHandling || part.stats.turnFactor
-        }),
-        isEquipped: true, // Si está en metadata.parts, está equipada
-        equippedToCarId: carId,
+      const parts = await Promise.all(metadata.parts.map(async (part: any, index: number) => {
+        // Verificar si la parte está realmente equipada usando el contrato de partes
+        const isEquipped = await carPartContract.isEquipped(part.partId);
+        const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(part.partId) : null;
+        
+        // Solo incluir la parte si está realmente equipada y en el carro correcto
+        if (isEquipped && equippedToCarId.toString() === carId && slotOccupied[index]) {
+          return {
+            id: part.partId.toString(),
+            partType: Number(part.partType),
+            imageURI: part.imageURI,
+            stats: this.mapPartStats({
+              partType: part.partType,
+              stat1: part.stats.speed || part.stats.transmissionAcceleration || part.stats.handling,
+              stat2: part.stats.maxSpeed || part.stats.transmissionSpeed || part.stats.driftFactor,
+              stat3: part.stats.acceleration || part.stats.transmissionHandling || part.stats.turnFactor
+            }),
+            isEquipped: true,
+            equippedToCarId: carId,
+          };
+        }
+        return null;
       }));
 
-      return parts;
+      return parts.filter((part): part is Part => part !== null);
     } catch (error) {
       console.error('Error getting car parts:', error);
       throw error;
