@@ -53,12 +53,12 @@ A high-speed 2D racing game built for the Lens Network ecosystem, combining the 
   - Lap system and result recording in the leaderboard
 - **Prize System**:
   - Each result record contributes to the current pool
-  - Automatic pool prize distribution at the end of the tournament
-  - Distribution percentages:
-    - 50% for first place
-    - 30% for second place
-    - 15% for third place
-    - 5% for community fund
+  - Results are recorded on Lens as NFTs, prove your achievements!
+  - Distribution among top 10 times:
+    - 1st place: 40% of the pool
+    - 2nd place: 20% of the pool
+    - 3rd to 10th place: 20% distributed equally (approximately 2.5% each)
+    - 20% for community fund and development
 
 ### 💰 Game Economy
 - **GRASS Token**:
