@@ -8,6 +8,7 @@ A high-speed 2D racing game built for the Lens Network ecosystem, combining the 
 
 ## 🎮 Related Repositories
 
+- 🎮 [Unity Game Repository](https://github.com/rofergon/Speed-Rush-2d-Unity-project) - Core game mechanics and physics
 - 🔧 [Backend API Repository](https://github.com/rofergon/speed-rush-2d-backend-) - AI-powered car generation service
 - ⛓️ [Smart Contracts Repository](https://github.com/rofergon/Speed-Rush-2D-contract) - Game's blockchain contracts
 
