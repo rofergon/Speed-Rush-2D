@@ -78,23 +78,26 @@ class Web3Service {
       this.carNFTContract = new ethers.Contract(
         import.meta.env.VITE_CAR_NFT_ADDRESS,
         [
-          "function mintPrice() view returns (uint256)",
-          "function mintCar(string memory carImageURI, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] memory partsData) payable",
-          "function setMintPrice(uint256 _newPrice)",
           "function balanceOf(address owner) view returns (uint256)",
           "function ownerOf(uint256 tokenId) view returns (address)",
-          "function getCarsByOwner(address owner) view returns (uint256[])",
+          "function getLastTokenId() view returns (uint256)",
           "function getCarComposition(uint256 carId) view returns (uint256[] partIds, string carImageURI, bool[] slotOccupied)",
           "function getFullCarMetadata(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats, tuple(uint256 partId, uint8 partType, string imageURI, tuple(uint8 speed, uint8 maxSpeed, uint8 acceleration, uint8 transmissionAcceleration, uint8 transmissionSpeed, uint8 transmissionHandling, uint8 handling, uint8 driftFactor, uint8 turnFactor) stats)[] parts))",
+          "function mintCar(string memory carImageURI, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] memory partsData) payable",
+          "function mintPrice() view returns (uint256)",
           "function equipPart(uint256 carId, uint256 partId, uint256 slotIndex)",
           "function unequipPart(uint256 carId, uint256 partId)",
-          "function getLastTokenId() view returns (uint256)",
-          "function getCar(uint256 carId) view returns (tuple(uint256 carId, address owner, string carImageURI, uint8 condition, tuple(uint8 speed, uint8 acceleration, uint8 handling, uint8 driftFactor, uint8 turnFactor, uint8 maxSpeed) combinedStats))",
-          "function tokenURI(uint256 tokenId) view returns (string)",
           "function approve(address to, uint256 tokenId)",
           "function getApproved(uint256 tokenId) view returns (address)",
           "function setApprovalForAll(address operator, bool approved)",
-          "function isApprovedForAll(address owner, address operator) view returns (bool)"
+          "function isApprovedForAll(address owner, address operator) view returns (bool)",
+          "function exists(uint256 tokenId) view returns (bool)",
+          "function tokenURI(uint256 tokenId) view returns (string)",
+          "function name() view returns (string)",
+          "function symbol() view returns (string)",
+          "function transferFrom(address from, address to, uint256 tokenId)",
+          "function safeTransferFrom(address from, address to, uint256 tokenId)",
+          "function safeTransferFrom(address from, address to, uint256 tokenId, bytes data)"
         ],
         signer
       );
