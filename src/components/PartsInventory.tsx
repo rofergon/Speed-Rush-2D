@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Grid, Box, Typography, Select, MenuItem, FormControl, InputLabel, CircularProgress } from '@mui/material';
 import { PartCard } from './PartCard';
 import { Part } from '../types/parts';
-import { partsService } from '../services/partsService';
 
 interface PartsInventoryProps {
   parts: Part[];
@@ -26,23 +25,37 @@ export const PartsInventory: React.FC<PartsInventoryProps> = ({
   const [filterEquipped, setFilterEquipped] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Function to verify and update part status
-  const verifyPartStatus = async (part: Part) => {
-    try {
-      const exists = await partsService.verifyPartExists(part.partId);
-      if (exists) {
-        const updatedPart = await partsService.getPartDetails(part.partId);
-        if (updatedPart) {
-          // Here you could update the global parts state if needed
-          console.log('Part verified and updated:', updatedPart);
-          return updatedPart;
-        }
-      }
-      return part;
-    } catch (error) {
-      console.error('Error verifying part:', error);
-      return part;
+  const getSlotForPartType = (partType: number): number => {
+    switch(partType) {
+      case 0: return 0; // Engine
+      case 1: return 1; // Transmission
+      case 2: return 2; // Core
+      default: return -1;
     }
+  };
+
+  const handleEquipPart = async (part: Part) => {
+    if (!selectedCar) {
+      console.error('No car selected');
+      return;
+    }
+    
+    console.log('PartsInventory: Llamando a handleEquipPart', {
+      partId: part.id,
+      carId: selectedCar.id,
+      slotIndex: getSlotForPartType(part.partType)
+    });
+
+    await onEquipPart(
+      part.id,
+      selectedCar.id,
+      getSlotForPartType(part.partType)
+    );
+  };
+
+  const handleUnequipPart = async (partId: string, carId: string) => {
+    console.log('PartsInventory: Llamando a handleUnequipPart', { partId, carId });
+    await onUnequipPart(partId, carId);
   };
 
   const filteredParts = parts.filter(part => {
@@ -52,27 +65,6 @@ export const PartsInventory: React.FC<PartsInventoryProps> = ({
       (filterEquipped === 'unequipped' && !part.isEquipped);
     return typeMatch && equippedMatch;
   });
-
-  const getSlotForPartType = (partType: number) => {
-    switch(partType) {
-      case 0: return 0; // Engine
-      case 1: return 1; // Transmission
-      case 2: return 2; // Core
-      default: return -1;
-    }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      // Verify status of all parts
-      await Promise.all(parts.map(verifyPartStatus));
-    } catch (error) {
-      console.error('Error refreshing parts:', error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   if (isLoading || isRefreshing) {
     return (
@@ -117,28 +109,16 @@ export const PartsInventory: React.FC<PartsInventoryProps> = ({
             </Select>
           </FormControl>
         </div>
-        
-        <button
-          onClick={handleRefresh}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          disabled={isRefreshing}
-        >
-          <span className="material-icons">refresh</span>
-          Refresh
-        </button>
       </div>
 
       <Grid container spacing={2}>
         {filteredParts.map((part) => (
-          <Grid item xs={12} sm={6} md={3} key={part.partId}>
+          <Grid item xs={12} sm={6} md={3} key={part.id}>
             <PartCard 
               {...part}
-              onEquip={selectedCar ? 
-                () => onEquipPart(part.partId, selectedCar.id, getSlotForPartType(part.partType)) : 
-                undefined
-              }
+              onEquip={() => handleEquipPart(part)}
               onUnequip={part.isEquipped && part.equippedToCarId ? 
-                () => onUnequipPart(part.partId, part.equippedToCarId!) : 
+                () => handleUnequipPart(part.id, part.equippedToCarId!) : 
                 undefined
               }
               canEquip={!!selectedCar && !part.isEquipped && 

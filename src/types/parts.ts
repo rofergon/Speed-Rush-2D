@@ -14,10 +14,18 @@ export interface PartStats {
 }
 
 export interface Part {
-  partId: string;
-  partType: PartType;
-  stats: PartStats;
+  id: string;
+  partType: number;
+  imageURI: string;
+  stats: {
+    speed?: number;
+    maxSpeed?: number;
+    acceleration?: number;
+    handling?: number;
+    driftFactor?: number;
+    turnFactor?: number;
+  };
   isEquipped: boolean;
   equippedToCarId?: string;
-  imageURI: string;
+  slotIndex?: number;
 } 

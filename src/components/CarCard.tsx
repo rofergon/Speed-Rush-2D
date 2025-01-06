@@ -1,60 +1,39 @@
-import React, { useState } from 'react';
-import { Card, Typography, Box, Button, Chip, Grid, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import React from 'react';
+import { Card, Typography, Box, Button, Chip, Grid } from '@mui/material';
 import SpeedIcon from '@mui/icons-material/Speed';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import TuneIcon from '@mui/icons-material/Tune';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import TurnSlightRightIcon from '@mui/icons-material/TurnSlightRight';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import BuildIcon from '@mui/icons-material/Build';
 import SportsScoreIcon from '@mui/icons-material/SportsScore';
-import SettingsIcon from '@mui/icons-material/Settings';
-import EngineeringIcon from '@mui/icons-material/Engineering';
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-
-interface CarStats {
-  speed: number;
-  maxSpeed: number;
-  acceleration: number;
-  handling: number;
-  driftFactor: number;
-  turnFactor: number;
-}
-
-interface Part {
-  partId: string;
-  partType: number;
-  stats: any;
-  imageURI: string;
-  isEquipped: boolean;
-  equippedToCarId?: string;
-}
+import { Part } from '../types/parts';
+import { PartSlot } from './PartSlot';
 
 interface CarCardProps {
   id: string;
   imageUrl: string;
-  stats?: Partial<CarStats>;
-  parts?: Part[];
-  availableParts?: Part[];
-  onSelect?: () => void;
-  onEquipPart?: (partId: string, slotType: number) => Promise<void>;
-  onUnequipPart?: (partId: string) => Promise<void>;
-  isSelected?: boolean;
-  alternativeSkin?: boolean;
+  stats: {
+    speed: number;
+    maxSpeed: number;
+    acceleration: number;
+    handling: number;
+    driftFactor: number;
+    turnFactor: number;
+  };
+  parts: Part[];
+  availableParts: Part[];
+  onSelect: () => void;
+  onEquipPart: (partId: string, slotType: number) => void;
+  onUnequipPart: (partId: string) => void;
+  onSell?: () => void;
+  isSelected: boolean;
+  alternativeSkin: boolean;
+  isListed?: boolean;
 }
 
-const defaultStats: CarStats = {
-  speed: 0,
-  maxSpeed: 0,
-  acceleration: 0,
-  handling: 0,
-  driftFactor: 0,
-  turnFactor: 0
-};
-
 const StatDisplay = ({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) => (
-  <Box display="flex" alignItems="center" gap={1}>
+  <Box display="flex" alignItems="center" gap={1} sx={{ minWidth: '120px' }}>
     <Box color="text.secondary" display="flex" alignItems="center">
       {icon}
     </Box>
@@ -64,367 +43,34 @@ const StatDisplay = ({ label, value, icon }: { label: string; value: number; ico
   </Box>
 );
 
-interface PartSlotProps {
-  type: number;
-  part?: Part;
-  availableParts?: Part[];
-  onEquipPart?: (partId: string) => Promise<void>;
-  onUnequipPart?: (partId: string) => Promise<void>;
-}
-
-const PartSlot: React.FC<PartSlotProps> = ({ type, part, availableParts = [], onEquipPart, onUnequipPart }) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isUnequipDialogOpen, setIsUnequipDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const getSlotLabel = (type: number) => {
-    switch (type) {
-      case 0:
-        return 'Motor';
-      case 1:
-        return 'Transmission';
-      case 2:
-        return 'Core';
-      default:
-        return 'Unknown';
-    }
-  };
-
-  const getSlotIcon = (type: number) => {
-    switch (type) {
-      case 0:
-        return <EngineeringIcon />;
-      case 1:
-        return <SettingsIcon />;
-      case 2:
-        return <PrecisionManufacturingIcon />;
-      default:
-        return <BuildIcon />;
-    }
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (part) {
-      setIsUnequipDialogOpen(true);
-    } else {
-      setIsDialogOpen(true);
-    }
-  };
-
-  const handleEquip = async (partId: string) => {
-    if (onEquipPart) {
-      setIsLoading(true);
-      try {
-        await onEquipPart(partId);
-        setIsDialogOpen(false);
-      } catch (error) {
-        console.error('Error equipando parte:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const handleUnequip = async () => {
-    if (part && onUnequipPart) {
-      setIsLoading(true);
-      try {
-        await onUnequipPart(part.partId);
-        setIsUnequipDialogOpen(false);
-      } catch (error) {
-        console.error('Error desequipando parte:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const filteredParts = availableParts.filter(p => p.partType === type);
-
-  return (
-    <>
-      <Box
-        onClick={handleClick}
-        sx={{
-          p: 1,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '8px',
-          background: part ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          cursor: 'pointer',
-          '&:hover': {
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            background: part ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)',
-          }
-        }}
-      >
-        {part ? (
-          <Box
-            component="img"
-            src={part.imageURI}
-            alt={`Part ${part.partId}`}
-            sx={{
-              width: '32px',
-              height: '32px',
-              objectFit: 'cover',
-              borderRadius: '4px',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
-            }}
-          />
-        ) : (
-          <Box 
-            color="text.secondary"
-            sx={{
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '4px'
-            }}
-          >
-            {getSlotIcon(type)}
-          </Box>
-        )}
-        <Box>
-          <Typography variant="caption" color="text.secondary">
-            {getSlotLabel(type)}
-          </Typography>
-          <Typography variant="body2" color="white">
-            {part ? `#${part.partId}` : 'Vacío'}
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Diálogo para mostrar partes disponibles */}
-      <Dialog 
-        open={isDialogOpen} 
-        onClose={() => setIsDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(4px)',
-            minWidth: '320px'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          background: 'linear-gradient(90deg, rgba(33, 150, 243, 0.1) 0%, rgba(0, 0, 0, 0) 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          color: 'white'
-        }}>
-          <SettingsIcon color="primary" />
-          Select {getSlotLabel(type)}
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <Box className="grid grid-cols-2 gap-2">
-            {filteredParts.filter(p => !p.isEquipped).length > 0 ? (
-              filteredParts
-                .filter(p => !p.isEquipped)
-                .map((availablePart) => (
-                  <Box
-                    key={availablePart.partId}
-                    onClick={() => handleEquip(availablePart.partId)}
-                    sx={{
-                      p: 2,
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      background: 'rgba(33, 150, 243, 0.05)',
-                      transition: 'all 0.2s ease-in-out',
-                      '&:hover': {
-                        background: 'rgba(33, 150, 243, 0.1)',
-                        borderColor: 'rgba(33, 150, 243, 0.3)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 12px rgba(33, 150, 243, 0.2)'
-                      }
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={availablePart.imageURI}
-                      alt={`Part ${availablePart.partId}`}
-                      sx={{
-                        width: '48px',
-                        height: '48px',
-                        objectFit: 'cover',
-                        borderRadius: '4px',
-                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
-                      }}
-                    />
-                    <Box>
-                      <Typography variant="subtitle2" color="white">
-                        #{availablePart.partId}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Available {getSlotLabel(type)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                ))
-            ) : (
-              <Typography color="text.secondary" className="col-span-2 text-center py-4">
-                No available parts of this type
-              </Typography>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ 
-          p: 2, 
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          background: 'linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.2) 100%)'
-        }}>
-          <Button 
-            onClick={() => setIsDialogOpen(false)} 
-            variant="text"
-            sx={{
-              color: 'rgba(255, 255, 255, 0.7)',
-              '&:hover': {
-                color: 'white',
-                background: 'rgba(255, 255, 255, 0.1)'
-              }
-            }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Diálogo de confirmación para desequipar */}
-      <Dialog
-        open={isUnequipDialogOpen}
-        onClose={() => setIsUnequipDialogOpen(false)}
-        PaperProps={{
-          sx: {
-            background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(4px)',
-            minWidth: '320px'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          background: 'linear-gradient(90deg, rgba(244, 67, 54, 0.1) 0%, rgba(0, 0, 0, 0) 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          color: 'white'
-        }}>
-          <DeleteOutlineIcon color="error" />
-          Unequip {getSlotLabel(type)}
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            p: 2,
-            background: 'rgba(244, 67, 54, 0.05)',
-            borderRadius: '8px',
-            border: '1px solid rgba(244, 67, 54, 0.2)'
-          }}>
-            {part && (
-              <Box
-                component="img"
-                src={part.imageURI}
-                alt={`Part ${part.partId}`}
-                sx={{
-                  width: '48px',
-                  height: '48px',
-                  objectFit: 'cover',
-                  borderRadius: '4px',
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
-                }}
-              />
-            )}
-            <Box>
-              <Typography variant="body1" color="white" gutterBottom>
-                Are you sure you want to unequip this part?
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                The part will return to your inventory
-              </Typography>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ 
-          p: 2, 
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          background: 'linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.2) 100%)'
-        }}>
-          <Button 
-            onClick={() => setIsUnequipDialogOpen(false)} 
-            variant="text"
-            sx={{
-              color: 'rgba(255, 255, 255, 0.7)',
-              '&:hover': {
-                color: 'white',
-                background: 'rgba(255, 255, 255, 0.1)'
-              }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleUnequip}
-            variant="contained"
-            disabled={isLoading}
-            startIcon={<DeleteOutlineIcon />}
-            sx={{
-              background: 'linear-gradient(45deg, #f44336 30%, #ff1744 90%)',
-              boxShadow: '0 3px 5px 2px rgba(244, 67, 54, .3)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #d32f2f 30%, #f50057 90%)',
-              }
-            }}
-          >
-            {isLoading ? 'Unequipping...' : 'Unequip Part'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
-};
-
 export const CarCard: React.FC<CarCardProps> = ({
   id,
   imageUrl,
-  stats = defaultStats,
-  parts = [],
-  availableParts = [],
+  stats,
+  parts,
+  availableParts,
   onSelect,
   onEquipPart,
   onUnequipPart,
+  onSell,
   isSelected,
-  alternativeSkin
+  alternativeSkin,
+  isListed
 }) => {
-  const combinedStats = { ...defaultStats, ...stats };
+  const getEquippedPart = (slotType: number) => {
+    return parts.find(part => part.partType === slotType);
+  };
 
-  const handleSlotClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Evitar que el click del slot propague al card
+  const getAvailablePartsForSlot = (slotType: number) => {
+    return availableParts.filter(part => part.partType === slotType && !part.isEquipped);
+  };
+
+  const handlePartEquip = (partId: string, slotType: number) => {
+    onEquipPart(partId, slotType);
   };
 
   return (
     <Card 
-      className="bg-gray-800 hover:bg-gray-700 transition-all duration-200"
       sx={{ 
         height: '100%',
         display: 'flex',
@@ -433,22 +79,48 @@ export const CarCard: React.FC<CarCardProps> = ({
         borderRadius: '12px',
         overflow: 'hidden',
         border: '1px solid rgba(255, 255, 255, 0.1)',
-        cursor: onSelect ? 'pointer' : 'default',
+        cursor: 'pointer',
+        backgroundColor: alternativeSkin ? 
+          'rgba(30, 41, 59, 0.85)' : // Azul grisáceo oscuro
+          'rgba(15, 23, 42, 0.85)', // Versión más oscura
+        backdropFilter: 'blur(10px)',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
           transition: 'all 0.2s ease-in-out',
-          borderColor: isSelected ? '#f44336' : 'rgba(255, 255, 255, 0.3)'
+          borderColor: isSelected ? '#f44336' : 'rgba(255, 255, 255, 0.3)',
+          backgroundColor: alternativeSkin ? 
+            'rgba(30, 41, 59, 0.95)' : 
+            'rgba(15, 23, 42, 0.95)',
         }
       }}
       onClick={onSelect}
     >
+      {isSelected && (
+        <Chip 
+          label="Selected" 
+          color="error"
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            backgroundColor: 'rgba(244, 67, 54, 0.9)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 1,
+            '& .MuiChip-label': {
+              fontWeight: 500
+            }
+          }}
+        />
+      )}
+      
       <Box 
         sx={{
           position: 'relative',
-          paddingTop: '75%', // 4:3 Aspect Ratio
+          paddingTop: '60%',
           overflow: 'hidden',
-          background: 'linear-gradient(45deg, rgba(0,0,0,0.2), rgba(244, 67, 54, 0.1))'
+          background: 'linear-gradient(45deg, rgba(0,0,0,0.1), rgba(244, 67, 54, 0.05))'
         }}
       >
         <Box
@@ -460,106 +132,79 @@ export const CarCard: React.FC<CarCardProps> = ({
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: '90%',
-            height: '90%',
+            width: '85%',
+            height: '85%',
             objectFit: 'contain',
             filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))'
           }}
         />
-        {isSelected && (
-          <Chip 
-            label="Selected" 
-            color="error"
-            size="small"
-            sx={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              backgroundColor: 'rgba(244, 67, 54, 0.9)',
-              backdropFilter: 'blur(4px)',
-              '& .MuiChip-label': {
-                fontWeight: 500
-              }
-            }}
-          />
-        )}
       </Box>
 
-      <Box 
-        sx={{ 
-          p: 2,
-          background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)'
-        }}
-      >
-        <Box 
-          sx={{ 
-            mb: 2,
-            pb: 2,
-            borderBottom: '1px solid rgba(255,255,255,0.1)'
+      <Box sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Typography 
+          variant="h6" 
+          component="div" 
+          fontWeight="bold" 
+          color="white"
+          sx={{
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            mb: 2
           }}
         >
-          <Typography 
-            variant="h6" 
-            component="div" 
-            fontWeight="bold" 
-            color="white"
-            sx={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }}
-          >
-            <SportsScoreIcon /> Car #{id}
-          </Typography>
-        </Box>
+          <SportsScoreIcon /> Car #{id}
+        </Typography>
 
         <Grid container spacing={2}>
           <Grid item xs={7}>
-            <Box className="space-y-1.5 mb-4">
-              <StatDisplay label="Speed" value={combinedStats.speed} icon={<SpeedIcon />} />
-              <StatDisplay label="Max Speed" value={combinedStats.maxSpeed} icon={<DirectionsCarIcon />} />
-              <StatDisplay label="Acceleration" value={combinedStats.acceleration} icon={<RocketLaunchIcon />} />
-              <StatDisplay label="Handling" value={combinedStats.handling} icon={<TuneIcon />} />
-              <StatDisplay label="Drift Factor" value={combinedStats.driftFactor} icon={<CompareArrowsIcon />} />
-              <StatDisplay label="Turn Factor" value={combinedStats.turnFactor} icon={<TurnSlightRightIcon />} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <StatDisplay label="Speed" value={stats.speed} icon={<SpeedIcon />} />
+              <StatDisplay label="Max Speed" value={stats.maxSpeed} icon={<DirectionsCarIcon />} />
+              <StatDisplay label="Acceleration" value={stats.acceleration} icon={<RocketLaunchIcon />} />
+              <StatDisplay label="Handling" value={stats.handling} icon={<TuneIcon />} />
+              <StatDisplay label="Drift Factor" value={stats.driftFactor} icon={<CompareArrowsIcon />} />
+              <StatDisplay label="Turn Factor" value={stats.turnFactor} icon={<TurnSlightRightIcon />} />
             </Box>
           </Grid>
+
           <Grid item xs={5}>
-            <Box className="space-y-2 mt-1 mb-4" onClick={handleSlotClick}>
-              <PartSlot 
-                type={0} 
-                part={parts.find(p => p.partType === 0)}
-                availableParts={availableParts}
-                onEquipPart={(partId) => onEquipPart?.(partId, 0)}
-                onUnequipPart={onUnequipPart}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <PartSlot
+                type={0}
+                label="Motor"
+                equippedPart={getEquippedPart(0)}
+                availableParts={getAvailablePartsForSlot(0)}
+                onEquip={(partId: string) => handlePartEquip(partId, 0)}
+                onUnequip={onUnequipPart}
               />
-              <PartSlot 
-                type={1} 
-                part={parts.find(p => p.partType === 1)}
-                availableParts={availableParts}
-                onEquipPart={(partId) => onEquipPart?.(partId, 1)}
-                onUnequipPart={onUnequipPart}
+              <PartSlot
+                type={1}
+                label="Transmission"
+                equippedPart={getEquippedPart(1)}
+                availableParts={getAvailablePartsForSlot(1)}
+                onEquip={(partId: string) => handlePartEquip(partId, 1)}
+                onUnequip={onUnequipPart}
               />
-              <PartSlot 
-                type={2} 
-                part={parts.find(p => p.partType === 2)}
-                availableParts={availableParts}
-                onEquipPart={(partId) => onEquipPart?.(partId, 2)}
-                onUnequipPart={onUnequipPart}
+              <PartSlot
+                type={2}
+                label="Core"
+                equippedPart={getEquippedPart(2)}
+                availableParts={getAvailablePartsForSlot(2)}
+                onEquip={(partId: string) => handlePartEquip(partId, 2)}
+                onUnequip={onUnequipPart}
               />
             </Box>
           </Grid>
         </Grid>
 
-        {onSelect && (
+        <Box sx={{ mt: 'auto', pt: 2, display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
-            color="primary"
-            startIcon={<BuildIcon />}
             onClick={onSelect}
-            fullWidth
             sx={{
+              flex: 1,
               textTransform: 'none',
               fontWeight: 600,
               background: isSelected ? 
@@ -572,7 +217,27 @@ export const CarCard: React.FC<CarCardProps> = ({
           >
             {isSelected ? 'Selected for Modification' : 'Select for Modification'}
           </Button>
-        )}
+          {onSell && (
+            <Button
+              variant="contained"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSell();
+              }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                background: isListed ?
+                  'linear-gradient(45deg, #FF9800 30%, #FFC107 90%)' :
+                  'linear-gradient(45deg, #4CAF50 30%, #8BC34A 90%)',
+                boxShadow: '0 3px 5px 2px rgba(76, 175, 80, .3)',
+                minWidth: '120px'
+              }}
+            >
+              {isListed ? 'Listed' : 'Sell Car'}
+            </Button>
+          )}
+        </Box>
       </Box>
     </Card>
   );

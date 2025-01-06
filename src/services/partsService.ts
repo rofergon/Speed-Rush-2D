@@ -15,8 +15,8 @@ class PartsService {
       for (const car of cars) {
         if (car.parts) {
           car.parts.forEach((part: any) => {
-            allParts.set(part.partId, {
-              partId: part.partId,
+            allParts.set(part.id, {
+              id: part.id,
               partType: part.partType,
               stats: part.stats,
               isEquipped: true,
@@ -51,15 +51,8 @@ class PartsService {
           const isEquipped = await carPartContract.isEquipped(i);
           const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(i) : null;
 
-          console.log(`Part ${i} found:`, {
-            partId: i.toString(),
-            partType: Number(partStats.partType),
-            isEquipped,
-            equippedToCarId: equippedToCarId?.toString() || null
-          });
-
           allParts.set(i.toString(), {
-            partId: i.toString(),
+            id: i.toString(),
             partType: Number(partStats.partType),
             stats: this.mapPartStats(partStats),
             isEquipped,
@@ -77,16 +70,8 @@ class PartsService {
         if (a.partType !== b.partType) {
           return a.partType - b.partType;
         }
-        return Number(a.partId) - Number(b.partId);
+        return Number(a.id) - Number(b.id);
       });
-
-      console.log('Total parts found:', partsArray.length);
-      console.log('Parts breakdown:', partsArray.map(p => ({
-        id: p.partId,
-        type: p.partType,
-        equipped: p.isEquipped,
-        inCar: p.equippedToCarId
-      })));
 
       return partsArray;
     } catch (error) {
@@ -138,7 +123,7 @@ class PartsService {
       const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(partId) : null;
 
       return {
-        partId,
+        id: partId,
         partType: Number(partStats.partType),
         stats: this.mapPartStats(partStats),
         isEquipped,

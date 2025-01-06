@@ -1,7 +1,7 @@
 import React from 'react';
-import { Button } from '@chakra-ui/react';
 import { web3Service } from '../services/web3Service';
 import { ethers } from 'ethers';
+import { Coins } from 'lucide-react';
 
 export function MintPriceDebug() {
   const handleCheckPrice = async () => {
@@ -16,12 +16,20 @@ export function MintPriceDebug() {
   };
 
   return (
-    <Button
-      colorScheme="blue"
+    <button
       onClick={handleCheckPrice}
-      size="md"
+      className="
+        px-6 py-4 rounded-xl
+        font-bold text-lg
+        transition-all duration-200
+        flex items-center justify-center gap-2
+        bg-gradient-to-r from-blue-600 to-cyan-500
+        hover:from-blue-500 hover:to-cyan-400
+        hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20
+      "
     >
-      Check Mint Price
-    </Button>
+      <Coins className="w-6 h-6" />
+      <span>Check Price</span>
+    </button>
   );
 } 
