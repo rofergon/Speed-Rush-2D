@@ -5,7 +5,6 @@ import { ConnectKitButton } from 'connectkit';
 import { CarGallery } from '../components/CarGallery';
 import { Background } from '../components/Background';
 import { MintCarButton } from '../components/MintCarButton';
-import { MintPriceDebug } from '../components/MintPriceDebug';
 import { PartsInventory } from '../components/PartsInventory';
 import { Gamepad2, Car as CarIcon, Wrench, RefreshCw } from 'lucide-react';
 import { Part } from '../types/parts';
@@ -281,31 +280,34 @@ export function ProfilePage() {
           ) : (
             <>
               <div className="mb-8">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center bg-gray-800/50 p-6 rounded-xl backdrop-blur-sm border border-gray-700/50">
                   <div>
-                    <h1 className="text-3xl font-bold mb-2">My Garage</h1>
-                    <p className="text-gray-400">Manage and customize your NFT vehicles</p>
+                    <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">My Garage</h1>
+                    <p className="text-gray-300 text-lg">Manage and customize your NFT vehicles</p>
+                  </div>
+                  <div>
+                    <MintCarButton />
                   </div>
                 </div>
               </div>
 
               {/* Tabs Navigation */}
-              <div className="flex border-b border-gray-700 mb-6">
+              <div className="flex border-b-2 border-gray-700/50 mb-6 bg-gray-800/30 rounded-t-xl p-2">
                 <button
-                  className={`px-6 py-3 font-medium ${
+                  className={`px-8 py-4 font-bold rounded-lg transition-all duration-200 ${
                     activeTab === 'cars'
-                      ? 'text-red-500 border-b-2 border-red-500'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
                   }`}
                   onClick={() => setActiveTab('cars')}
                 >
-                  My Cars
+                  My Vehicles
                 </button>
                 <button
-                  className={`px-6 py-3 font-medium ${
+                  className={`px-8 py-4 font-bold rounded-lg transition-all duration-200 ${
                     activeTab === 'parts'
-                      ? 'text-red-500 border-b-2 border-red-500'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
                   }`}
                   onClick={() => setActiveTab('parts')}
                 >
@@ -325,7 +327,6 @@ export function ProfilePage() {
                   <div className="flex justify-between items-center mb-6">
                     <div className="flex gap-4">
                       <MintCarButton />
-                      <MintPriceDebug />
                     </div>
                     <div className="flex gap-4">
                       {selectedCar && (

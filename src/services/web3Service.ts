@@ -51,7 +51,7 @@ class Web3Service {
     return await contract.mintPrice();
   }
 
-  async mintCar(address: string, carData: CarGenerationData, value: string): Promise<void> {
+  async mintCar(address: string, carData: CarGenerationData, value: string): Promise<ethers.ContractTransactionResponse> {
     try {
       const contract = await this.getCarNFTContract();
       const tx = await contract.mintCar(
@@ -65,7 +65,7 @@ class Web3Service {
         })),
         { value }
       );
-      await tx.wait();
+      return tx;
     } catch (error) {
       console.error('Error minting car:', error);
       throw error;
@@ -119,7 +119,12 @@ class Web3Service {
           "function approve(address to, uint256 tokenId)",
           "function getApproved(uint256 tokenId) view returns (address)",
           "function setApprovalForAll(address operator, bool approved)",
-          "function isApprovedForAll(address owner, address operator) view returns (bool)"
+          "function isApprovedForAll(address owner, address operator) view returns (bool)",
+          "function getOwnerParts(address owner) view returns (uint256[])",
+          "function getOwnerPartsByType(address owner, uint8 partType) view returns (uint256[])",
+          "function getOwnerEquippedParts(address owner) view returns (uint256[])",
+          "function getOwnerUnequippedParts(address owner) view returns (uint256[])",
+          "function getOwnerPartsWithDetails(address owner) view returns (tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] allParts, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] equippedParts, tuple(uint8 partType, uint8 stat1, uint8 stat2, uint8 stat3, string imageURI)[] unequippedParts, uint256[] equippedInCarIds)"
         ],
         signer
       );
@@ -343,7 +348,10 @@ class Web3Service {
           "function cancelCarListing(uint256 carId) external",
           "function carListings(uint256) view returns (address seller, uint256 carId, uint256 price, tuple(bool included, uint256 partId)[3] partSlots, bool active)",
           "function buyCar(uint256 carId) external payable",
-          "function getListingApprovalStatus(uint256 carId, bool[3] memory includeSlots) external view returns (bool carApproved, bool[] memory partsApproved)"
+          "function getListingApprovalStatus(uint256 carId, bool[3] memory includeSlots) external view returns (bool carApproved, bool[] memory partsApproved)",
+          "event CarListed(uint256 indexed carId, address indexed seller, uint256 price, bool[3] slotsIncluded)",
+          "event CarSold(uint256 indexed carId, address indexed seller, address indexed buyer, uint256 price)",
+          "event ListingCancelled(uint256 indexed carId, bool isCar)"
         ],
         signer
       );
@@ -351,34 +359,37 @@ class Web3Service {
     return this.marketplaceContract;
   }
 
+  async approveMarketplace(): Promise<void> {
+    try {
+      // Aprobar el marketplace para operar con todos los carros
+      const carContract = await this.getCarNFTContract();
+      const carApprovalTx = await carContract.setApprovalForAll(import.meta.env.VITE_CAR_MARKETPLACE_ADDRESS, true);
+      await carApprovalTx.wait();
+
+      // Aprobar el marketplace para operar con todas las partes
+      const carPartContract = await this.getCarPartContract();
+      const partApprovalTx = await carPartContract.setApprovalForAll(import.meta.env.VITE_CAR_MARKETPLACE_ADDRESS, true);
+      await partApprovalTx.wait();
+    } catch (error) {
+      console.error('Error approving marketplace:', error);
+      throw error;
+    }
+  }
+
   async listCarForSale(carId: string, price: string, includeSlots: boolean[]): Promise<void> {
     try {
       const contract = await this.getMarketplaceContract();
       const priceInWei = ethers.parseEther(price);
       
-      // Primero verificamos las aprobaciones
+      // Verificamos las aprobaciones
       const [carApproved, partsApproved] = await contract.getListingApprovalStatus(carId, includeSlots);
       
-      // Si el carro no está aprobado, necesitamos aprobarlo
-      if (!carApproved) {
-        const carContract = await this.getCarNFTContract();
-        const approveTx = await carContract.approve(import.meta.env.VITE_CAR_MARKETPLACE_ADDRESS, carId);
-        await approveTx.wait();
+      // Si falta alguna aprobación, aprobamos todo de una vez
+      if (!carApproved || includeSlots.some((include, i) => include && !partsApproved[i])) {
+        await this.approveMarketplace();
       }
 
-      // Si hay partes incluidas que no están aprobadas, las aprobamos
-      const carPartContract = await this.getCarPartContract();
-      for (let i = 0; i < includeSlots.length; i++) {
-        if (includeSlots[i] && !partsApproved[i]) {
-          const [partIds] = await this.getCarComposition(carId);
-          if (partIds[i]) {
-            const approveTx = await carPartContract.approve(import.meta.env.VITE_CAR_MARKETPLACE_ADDRESS, partIds[i]);
-            await approveTx.wait();
-          }
-        }
-      }
-
-      // Finalmente listamos el carro
+      // Listamos el carro
       const tx = await contract.listCar(carId, priceInWei, includeSlots);
       await tx.wait();
     } catch (error) {
@@ -402,21 +413,43 @@ class Web3Service {
     seller: string;
     price: string;
     isActive: boolean;
-    includedParts: boolean[];
+    includedSlots: boolean[];
   } | null> {
     try {
       const contract = await this.getMarketplaceContract();
-      const listing = await contract.carListings(carId);
+      let listing;
       
+      try {
+        listing = await contract.carListings(carId);
+      } catch (error) {
+        console.log('Error al obtener listing, retornando null:', error);
+        return null;
+      }
+      
+      // Verificar si el listing es válido
+      if (!listing || listing.seller === '0x0000000000000000000000000000000000000000') {
+        return null;
+      }
+
+      // Verificar si está activo
       if (!listing.active) {
         return null;
       }
 
+      // Convertir los PartSlots a un array de booleanos
+      let includedSlots: boolean[];
+      try {
+        includedSlots = listing.partSlots.map((slot: { included: boolean }) => slot.included);
+      } catch (error) {
+        console.log('Error al procesar partSlots, usando array vacío:', error);
+        includedSlots = [false, false, false];
+      }
+
       return {
         seller: listing.seller,
-        price: ethers.formatEther(listing.price),
-        isActive: listing.active,
-        includedParts: listing.partSlots.map((slot: any) => slot.included)
+        price: ethers.formatEther(listing.price || 0),
+        isActive: Boolean(listing.active),
+        includedSlots
       };
     } catch (error) {
       console.error('Error getting car listing:', error);
@@ -432,6 +465,56 @@ class Web3Service {
       carImageURI,
       slotOccupied
     ];
+  }
+
+  async getUserPartsWithDetails(address: string): Promise<{
+    allParts: Part[];
+    equippedParts: Part[];
+    unequippedParts: Part[];
+    equippedInCarIds: string[];
+  }> {
+    try {
+      const contract = await this.getCarPartContract();
+      const result = await contract.getOwnerPartsWithDetails(address);
+
+      const mapPartStats = (partStats: any, index: number, isEquipped: boolean = false, equippedToCarId?: string): Part => ({
+        id: index.toString(), // El índice se usa como ID temporal
+        partType: Number(partStats.partType),
+        imageURI: partStats.imageURI,
+        stats: this.mapPartStats(partStats),
+        isEquipped,
+        equippedToCarId
+      });
+
+      return {
+        allParts: result.allParts.map((p: any, i: number) => mapPartStats(p, i)),
+        equippedParts: result.equippedParts.map((p: any, i: number) => 
+          mapPartStats(p, i, true, result.equippedInCarIds[i].toString())
+        ),
+        unequippedParts: result.unequippedParts.map((p: any, i: number) => 
+          mapPartStats(p, i, false)
+        ),
+        equippedInCarIds: result.equippedInCarIds.map((id: bigint) => id.toString())
+      };
+    } catch (error) {
+      console.error('Error getting user parts with details:', error);
+      throw error;
+    }
+  }
+
+  async getUserParts(address: string): Promise<Part[]> {
+    try {
+      const { allParts } = await this.getUserPartsWithDetails(address);
+      return allParts;
+    } catch (error) {
+      console.error('Error getting user parts:', error);
+      throw error;
+    }
+  }
+
+  async getLastTokenId(): Promise<bigint> {
+    const contract = await this.getCarNFTContract();
+    return await contract.getLastTokenId();
   }
 }
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Text, VStack, useToast } from '@chakra-ui/react';
+import { Button, Text, VStack, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, Box, Flex, Grid, GridItem, Image, Stat, StatLabel, StatNumber } from '@chakra-ui/react';
 import { useAccount } from 'wagmi';
 import { web3Service } from '../services/web3Service';
 import { ethers } from 'ethers';
+import { Car } from '../types/car';
 
 interface MintButtonProps {
   onMintSuccess?: () => void;
@@ -11,6 +12,9 @@ interface MintButtonProps {
 export function MintButton({ onMintSuccess }: MintButtonProps) {
   const [mintPrice, setMintPrice] = useState<string>('0');
   const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mintedCar, setMintedCar] = useState<Car | null>(null);
+  const [mintStatus, setMintStatus] = useState<string>('');
   const { address } = useAccount();
   const toast = useToast();
 
@@ -26,7 +30,7 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
       console.error('Error loading mint price:', error);
       toast({
         title: 'Error',
-        description: 'Could not load mint price',
+        description: 'No se pudo cargar el precio de minteo',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -39,6 +43,7 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
 
     try {
       setIsLoading(true);
+      setMintStatus('Preparando la transacción...');
       const carData = {
         carImageURI: "https://example.com/car.png",
         parts: [
@@ -73,25 +78,57 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
       console.log('Balance actual:', ethers.formatEther(balance), 'GRASS');
       console.log('Precio a pagar:', ethers.formatEther(priceInWei), 'GRASS');
       
+      setMintStatus('Enviando transacción...');
       // Enviar el precio exacto en wei al contrato
-      await web3Service.mintCar(address, carData, priceInWei.toString());
+      const tx = await web3Service.mintCar(address, carData, priceInWei.toString());
+      console.log('Transacción enviada:', tx);
 
+      setMintStatus('Esperando confirmación...');
       toast({
-        title: 'Success',
-        description: 'Car minted successfully!',
-        status: 'success',
-        duration: 5000,
+        title: 'Transacción Enviada',
+        description: 'Esperando confirmación de la red...',
+        status: 'info',
+        duration: null,
         isClosable: true,
       });
 
-      if (onMintSuccess) {
-        onMintSuccess();
+      // Esperar a que la transacción se confirme
+      const receipt = await tx.wait();
+      console.log('Transacción confirmada:', receipt);
+
+      setMintStatus('Obteniendo detalles del nuevo carro...');
+      // Obtener el ID del carro minteado del evento
+      const lastTokenId = await web3Service.getLastTokenId();
+      console.log('ID del carro minteado:', lastTokenId);
+
+      // Obtener los detalles del carro minteado
+      const cars = await web3Service.getUserCars(address);
+      const newCar = cars.find(car => car.id === lastTokenId.toString());
+      console.log('Detalles del carro minteado:', newCar);
+
+      if (newCar) {
+        setMintedCar(newCar);
+        setIsModalOpen(true);
+        setMintStatus('');
+        
+        toast({
+          title: 'Éxito',
+          description: '¡Carro minteado exitosamente!',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
+
+        if (onMintSuccess) {
+          onMintSuccess();
+        }
       }
     } catch (error) {
       console.error('Error minting car:', error);
+      setMintStatus('');
       toast({
         title: 'Error',
-        description: 'Failed to mint car',
+        description: 'Error al mintear el carro',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -102,17 +139,93 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
   };
 
   return (
-    <VStack spacing={2}>
-      <Text>Mint Price: {mintPrice} GRASS</Text>
-      <Button
-        colorScheme="green"
-        onClick={handleMint}
-        isLoading={isLoading}
-        loadingText="Minting..."
-        width="full"
-      >
-        Mint New Car
-      </Button>
-    </VStack>
+    <>
+      <VStack spacing={2}>
+        <Text>Precio de Minteo: {mintPrice} GRASS</Text>
+        <Button
+          colorScheme="green"
+          onClick={handleMint}
+          isLoading={isLoading}
+          loadingText={mintStatus || "Minteando..."}
+          width="full"
+        >
+          Mintear Nuevo Carro
+        </Button>
+        {mintStatus && (
+          <Text fontSize="sm" color="gray.500">
+            {mintStatus}
+          </Text>
+        )}
+      </VStack>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="xl">
+        <ModalOverlay backdropFilter="blur(10px)" />
+        <ModalContent bg="gray.800" color="white">
+          <ModalHeader>¡Nuevo Carro Minteado!</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {mintedCar && (
+              <Box>
+                <Flex direction="column" align="center" mb={6}>
+                  <Image
+                    src={mintedCar.carImageURI || '/default-car.png'}
+                    alt={`Car #${mintedCar.id}`}
+                    boxSize="200px"
+                    objectFit="contain"
+                    mb={4}
+                  />
+                  <Text fontSize="xl" fontWeight="bold">ID: #{mintedCar.id}</Text>
+                </Flex>
+
+                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                  <Stat>
+                    <StatLabel>Velocidad</StatLabel>
+                    <StatNumber>{mintedCar.combinedStats.speed}</StatNumber>
+                  </Stat>
+                  <Stat>
+                    <StatLabel>Aceleración</StatLabel>
+                    <StatNumber>{mintedCar.combinedStats.acceleration}</StatNumber>
+                  </Stat>
+                  <Stat>
+                    <StatLabel>Manejo</StatLabel>
+                    <StatNumber>{mintedCar.combinedStats.handling}</StatNumber>
+                  </Stat>
+                  <Stat>
+                    <StatLabel>Factor de Derrape</StatLabel>
+                    <StatNumber>{mintedCar.combinedStats.driftFactor}</StatNumber>
+                  </Stat>
+                  <Stat>
+                    <StatLabel>Factor de Giro</StatLabel>
+                    <StatNumber>{mintedCar.combinedStats.turnFactor}</StatNumber>
+                  </Stat>
+                  <Stat>
+                    <StatLabel>Velocidad Máxima</StatLabel>
+                    <StatNumber>{mintedCar.combinedStats.maxSpeed}</StatNumber>
+                  </Stat>
+                </Grid>
+
+                <Box mt={6}>
+                  <Text fontWeight="bold" mb={2}>Partes Equipadas:</Text>
+                  {mintedCar.parts.map((part, index) => (
+                    <Flex key={part.id} align="center" mb={2}>
+                      <Image
+                        src={part.imageURI || '/default-part.png'}
+                        alt={`Part ${part.id}`}
+                        boxSize="40px"
+                        mr={2}
+                      />
+                      <Text>
+                        {part.partType === 0 ? 'Motor' : 
+                         part.partType === 1 ? 'Transmisión' : 'Núcleo'}
+                      </Text>
+                    </Flex>
+                  ))}
+                </Box>
+              </Box>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </>
   );
 } 

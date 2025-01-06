@@ -9,6 +9,7 @@ import { Background } from '../components/Background';
 import { marketplaceService } from '../services/marketplaceService';
 import { toast } from 'react-hot-toast';
 import { MarketplaceCarCard } from '../components/MarketplaceCarCard';
+import { web3Service } from '../services/web3Service';
 
 type SortOption = 'price-asc' | 'price-desc' | 'condition-desc' | 'recent';
 type FilterOption = 'all' | 'high-speed' | 'high-handling' | 'perfect-condition';
@@ -21,6 +22,7 @@ export function MarketplacePage() {
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [showMyListings, setShowMyListings] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
 
   useEffect(() => {
     if (isConnected) {
@@ -66,6 +68,19 @@ export function MarketplacePage() {
       toast.error('Error cancelling listing');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleApproveMarketplace = async () => {
+    try {
+      setIsApproving(true);
+      await web3Service.approveMarketplace();
+      toast.success('Marketplace aprobado exitosamente');
+    } catch (error) {
+      console.error('Error aprobando marketplace:', error);
+      toast.error('Error al aprobar el marketplace');
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -148,17 +163,37 @@ export function MarketplacePage() {
                     <h1 className="text-3xl font-bold mb-2">Marketplace</h1>
                     <div className="flex items-center gap-2 text-gray-400">
                       <Info className="w-4 h-4" />
-                      <span className="text-sm">The prices are in GRASS, the native token of the game</span>
+                      <span className="text-sm">Los precios están en GRASS, el token nativo del juego</span>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => setShowMyListings(!showMyListings)}
-                    className={`${
-                      showMyListings ? 'bg-red-600' : 'bg-gray-700'
-                    } hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors mt-4 md:mt-0`}
-                  >
-                    {showMyListings ? 'View All' : 'My Listings'}
-                  </button>
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={handleApproveMarketplace}
+                      disabled={isApproving}
+                      className={`${
+                        isApproving ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'
+                      } text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2`}
+                    >
+                      {isApproving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Aprobando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Aprobar Marketplace</span>
+                        </>
+                      )}
+                    </button>
+                    <button 
+                      onClick={() => setShowMyListings(!showMyListings)}
+                      className={`${
+                        showMyListings ? 'bg-red-600' : 'bg-gray-700'
+                      } hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors`}
+                    >
+                      {showMyListings ? 'Ver Todos' : 'Mis Listados'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
