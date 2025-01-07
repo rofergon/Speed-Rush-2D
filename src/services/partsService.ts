@@ -5,68 +5,57 @@ import { ethers } from 'ethers';
 class PartsService {
   async getUserParts(address: string): Promise<Part[]> {
     try {
-      const allParts = new Map<string, Part>();
       const carPartContract = await web3Service.getCarPartContract();
       
-      // Get user's cars to verify equipped parts
-      const cars = await web3Service.getUserCars(address);
-      
-      // First collect all parts equipped in cars
-      for (const car of cars) {
-        if (car.parts) {
-          car.parts.forEach((part: any) => {
-            allParts.set(part.id, {
-              id: part.id,
-              partType: part.partType,
-              stats: part.stats,
-              isEquipped: true,
-              equippedToCarId: car.id,
-              imageURI: part.imageURI
-            });
-          });
-        }
-      }
+      // Obtener los IDs de las partes equipadas y no equipadas
+      const equippedPartIds = await carPartContract.getOwnerEquippedParts(address);
+      const unequippedPartIds = await carPartContract.getOwnerUnequippedParts(address);
 
-      // Search for unequipped parts by directly verifying ownership
-      const maxPartId = 20; // Adjust as needed
-      for (let i = 0; i < maxPartId; i++) {
-        try {
-          // If we already have this part from cars, skip it
-          if (allParts.has(i.toString())) {
-            continue;
-          }
+      // Procesar partes equipadas
+      const equippedPartsPromises = equippedPartIds.map(async (partId: bigint) => {
+        const partStats = await carPartContract.getPartStats(partId);
+        const equippedToCarId = await carPartContract.getEquippedCar(partId);
+        
+        return {
+          id: partId.toString(),
+          partType: Number(partStats.partType),
+          stats: this.mapPartStats({
+            partType: partStats.partType,
+            stat1: partStats.stat1,
+            stat2: partStats.stat2,
+            stat3: partStats.stat3
+          }),
+          isEquipped: true,
+          equippedToCarId: equippedToCarId.toString(),
+          imageURI: partStats.imageURI
+        };
+      });
 
-          // Verify if the part exists and if the user owns it
-          const exists = await carPartContract.exists(i);
-          if (!exists) {
-            continue;
-          }
+      // Procesar partes no equipadas
+      const unequippedPartsPromises = unequippedPartIds.map(async (partId: bigint) => {
+        const partStats = await carPartContract.getPartStats(partId);
+        
+        return {
+          id: partId.toString(),
+          partType: Number(partStats.partType),
+          stats: this.mapPartStats({
+            partType: partStats.partType,
+            stat1: partStats.stat1,
+            stat2: partStats.stat2,
+            stat3: partStats.stat3
+          }),
+          isEquipped: false,
+          equippedToCarId: null,
+          imageURI: partStats.imageURI
+        };
+      });
 
-          const owner = await carPartContract.ownerOf(i);
-          if (owner.toLowerCase() !== address.toLowerCase()) {
-            continue;
-          }
+      // Esperar a que se resuelvan todas las promesas
+      const equippedParts = await Promise.all(equippedPartsPromises);
+      const unequippedParts = await Promise.all(unequippedPartsPromises);
 
-          const partStats = await carPartContract.getPartStats(i);
-          const isEquipped = await carPartContract.isEquipped(i);
-          const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(i) : null;
-
-          allParts.set(i.toString(), {
-            id: i.toString(),
-            partType: Number(partStats.partType),
-            stats: this.mapPartStats(partStats),
-            isEquipped,
-            equippedToCarId: equippedToCarId?.toString() || null,
-            imageURI: partStats.imageURI
-          });
-        } catch (error) {
-          // If there's an error checking a part, continue with the next one
-          continue;
-        }
-      }
-
-      // Convert Map to array and sort
-      const partsArray = Array.from(allParts.values()).sort((a, b) => {
+      // Combinar y ordenar todas las partes
+      const partsArray = [...equippedParts, ...unequippedParts].sort((a, b) => {
         if (a.partType !== b.partType) {
           return a.partType - b.partType;
         }
