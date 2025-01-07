@@ -134,63 +134,37 @@ class Web3Service {
   async getUserCars(address: string): Promise<any[]> {
     try {
       const contract = await this.getCarNFTContract();
-      const carPartContract = await this.getCarPartContract();
       
-      // Obtener el balance de NFTs del usuario
-      const balance = await contract.balanceOf(address);
-
-      if (balance === 0n) {
-        return [];
-      }
-
       // Obtener el último ID de token
       const lastTokenId = await contract.getLastTokenId();
+      if (lastTokenId === 0n) {
+        return [];
+      }
 
       // Buscar todos los tokens del usuario
       const carIds = [];
       for (let i = 1n; i <= lastTokenId; i++) {
         try {
+          const exists = await contract.exists(i);
+          if (!exists) continue;
+          
           const owner = await contract.ownerOf(i);
           if (owner.toLowerCase() === address.toLowerCase()) {
             carIds.push(i);
           }
         } catch (error) {
-          // Si el token no existe o fue quemado, continuamos con el siguiente
           continue;
         }
       }
       
-      // Obtener detalles de cada carro
+      // Obtener detalles de cada carro usando getFullCarMetadata directamente
       const cars = await Promise.all(carIds.map(async (carId: bigint) => {
         try {
-          // Obtener composición del carro
-          const [partIds, carImageURI, slotOccupied] = await contract.getCarComposition(carId);
-          
-          // Obtener detalles de las partes
-          const parts = await Promise.all(partIds.map(async (partId: bigint, index: number) => {
-            if (!slotOccupied[index]) return null;
-            
-            const partStats = await carPartContract.getPartStats(partId);
-            const isEquipped = await carPartContract.isEquipped(partId);
-            const equippedToCarId = isEquipped ? await carPartContract.getEquippedCar(partId) : null;
-            
-            return {
-              id: partId.toString(),
-              partType: Number(partStats.partType),
-              imageURI: partStats.imageURI,
-              stats: this.mapPartStats(partStats),
-              isEquipped,
-              equippedToCarId: equippedToCarId?.toString(),
-              slotIndex: index
-            };
-          }));
-
-          // Obtener metadata completa
           const metadata = await contract.getFullCarMetadata(carId);
-
+          
           return {
             id: carId.toString(),
-            carImageURI,
+            carImageURI: metadata.carImageURI,
             owner: metadata.owner,
             condition: Number(metadata.condition),
             combinedStats: {
@@ -201,9 +175,27 @@ class Web3Service {
               turnFactor: Number(metadata.combinedStats.turnFactor),
               maxSpeed: Number(metadata.combinedStats.maxSpeed)
             },
-            parts: parts.filter(part => part !== null)
+            parts: metadata.parts.map((part: any) => ({
+              id: part.partId.toString(),
+              partType: Number(part.partType),
+              imageURI: part.imageURI,
+              stats: {
+                speed: Number(part.stats.speed || 0),
+                maxSpeed: Number(part.stats.maxSpeed || 0),
+                acceleration: Number(part.stats.acceleration || 0),
+                transmissionAcceleration: Number(part.stats.transmissionAcceleration || 0),
+                transmissionSpeed: Number(part.stats.transmissionSpeed || 0),
+                transmissionHandling: Number(part.stats.transmissionHandling || 0),
+                handling: Number(part.stats.handling || 0),
+                driftFactor: Number(part.stats.driftFactor || 0),
+                turnFactor: Number(part.stats.turnFactor || 0)
+              },
+              isEquipped: true,
+              equippedToCarId: carId.toString()
+            }))
           };
         } catch (error) {
+          console.error(`Error getting car ${carId} metadata:`, error);
           return null;
         }
       }));
