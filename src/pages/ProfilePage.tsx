@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAccount } from 'wagmi';
-import { ConnectKitButton } from 'connectkit';
+import { useAbstraxionAccount, useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
+import { XionConnectButton } from '../components/XionConnectButton';
 import { CarGallery } from '../components/CarGallery';
 import { Background } from '../components/Background';
 import { MintCarButton } from '../components/MintCarButton';
@@ -13,6 +13,7 @@ import { web3Service } from '../services/web3Service';
 import { activeCarService } from '../services/activeCarService';
 import { Car } from '../types/car';
 import { toast } from 'react-hot-toast';
+import { Button } from "@burnt-labs/ui";
 
 // Agregar interfaces para el modal de venta
 interface SellModalProps {
@@ -34,7 +35,7 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
         <h3 className="text-xl font-bold mb-4">List Car for Sale</h3>
         
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Price (in GRASS)</label>
+          <label className="block text-sm font-medium mb-2">Price (in XION)</label>
           <input
             type="number"
             value={price}
@@ -66,19 +67,21 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
         </div>
 
         <div className="flex justify-end gap-2">
-          <button
+          <Button
             onClick={onClose}
+            structure="base"
             className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => onConfirm(price, includeSlots)}
+            structure="base"
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             disabled={!price || parseFloat(price) <= 0}
           >
             List for Sale
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -86,7 +89,8 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
 };
 
 export function ProfilePage() {
-  const { isConnected, address } = useAccount();
+  const { data: account } = useAbstraxionAccount();
+  const { client } = useAbstraxionSigningClient();
   const [isAlternativeSkin, setIsAlternativeSkin] = useState(false);
   const [activeTab, setActiveTab] = useState<'cars' | 'parts'>('cars');
   const [parts, setParts] = useState<Part[]>([]);
@@ -103,11 +107,11 @@ export function ProfilePage() {
 
   useEffect(() => {
     const loadParts = async () => {
-      if (!address) return;
+      if (!account.bech32Address) return;
       try {
         setIsLoadingParts(true);
         setError(null);
-        const userParts = await partsService.getUserParts(address);
+        const userParts = await partsService.getUserParts(account.bech32Address);
         setParts(userParts);
       } catch (error) {
         console.error('Error loading parts:', error);
@@ -117,10 +121,10 @@ export function ProfilePage() {
       }
     };
 
-    if (isConnected) {
+    if (client) {
       loadParts();
     }
-  }, [isConnected, address]);
+  }, [client, account.bech32Address]);
 
   const handleCarSelect = async (car: Car) => {
     try {
@@ -142,8 +146,8 @@ export function ProfilePage() {
     try {
       setError(null);
       await web3Service.equipPart(carId, partId, slotIndex);
-      if (address) {
-        const userParts = await partsService.getUserParts(address);
+      if (account.bech32Address) {
+        const userParts = await partsService.getUserParts(account.bech32Address);
         setParts(userParts);
         if (selectedCar) {
           const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
@@ -168,8 +172,8 @@ export function ProfilePage() {
     try {
       setError(null);
       await web3Service.unequipPart(carId, partId);
-      if (address) {
-        const userParts = await partsService.getUserParts(address);
+      if (account.bech32Address) {
+        const userParts = await partsService.getUserParts(account.bech32Address);
         setParts(userParts);
         if (selectedCar) {
           const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
@@ -264,18 +268,18 @@ export function ProfilePage() {
                   <CarIcon className="inline-block w-5 h-5 mr-1" />
                   Market
                 </Link>
-                <ConnectKitButton />
+                <XionConnectButton />
               </div>
             </div>
           </div>
         </nav>
 
         <div className="max-w-[98%] mx-auto px-4 py-8">
-          {!isConnected ? (
+          {!client ? (
             <div className="text-center py-20">
               <h2 className="text-2xl font-bold mb-4">Connect Your Wallet to View Your Garage</h2>
               <p className="text-gray-400 mb-8">You need to connect your wallet to view and manage your vehicles</p>
-              <ConnectKitButton />
+              <XionConnectButton />
             </div>
           ) : (
             <>
