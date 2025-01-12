@@ -20,7 +20,7 @@ export function XionConnectButton() {
             {account.bech32Address.slice(0, 6)}...{account.bech32Address.slice(-4)}
           </div>
         ) : (
-          "Conectar Wallet"
+          "Connect or Login"
         )}
       </Button>
       
