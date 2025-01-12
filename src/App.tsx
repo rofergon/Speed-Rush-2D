@@ -4,14 +4,15 @@ import { HomePage } from './pages/HomePage';
 import { GamePage } from './pages/GamePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { MarketplacePage } from './pages/MarketplacePage';
-import { Web3Provider } from './providers/Web3Provider';
+import { XionProvider } from './providers/XionProvider';
 import { Background } from './components/Background';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <>
       <Background />
-      <Web3Provider>
+      <XionProvider>
         <Router>
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -20,7 +21,8 @@ function App() {
             <Route path="/marketplace" element={<MarketplacePage />} />
           </Routes>
         </Router>
-      </Web3Provider>
+        <Toaster position="top-right" />
+      </XionProvider>
     </>
   );
 }

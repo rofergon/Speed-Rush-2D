@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'path'
 
 // https://vitejs.dev/config/
@@ -8,7 +9,15 @@ export default defineConfig({
     react({
       jsxRuntime: 'automatic',
       jsxImportSource: 'react'
-    })
+    }),
+    nodePolyfills({
+      include: ['buffer', 'crypto', 'stream', 'util', 'url', 'http', 'https'],
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+    }),
   ],
   server: {
     port: 3000,
@@ -18,6 +27,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      process: 'process/browser',
       stream: 'stream-browserify',
       util: 'util',
     }

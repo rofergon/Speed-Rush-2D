@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Grid, Box, Typography, CircularProgress } from '@mui/material';
-import { useAccount } from 'wagmi';
+import { useAbstraxionAccount, useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
 import { CarCard } from './CarCard';
 import { web3Service } from '../services/web3Service';
 import { partsService } from '../services/partsService';
@@ -29,16 +29,17 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
   const [cars, setCars] = useState<Car[]>([]);
   const [availableParts, setAvailableParts] = useState<Part[]>([]);
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
-  const { address } = useAccount();
+  const { data: account } = useAbstraxionAccount();
+  const { client } = useAbstraxionSigningClient();
 
   const loadData = async () => {
-    if (!address) return;
+    if (!account.bech32Address || !client) return;
     try {
       setIsLoading(true);
       setError(null);
       
       // Cargar carros y sus partes
-      const userCars = await web3Service.getUserCars(address);
+      const userCars = await web3Service.getUserCars(account.bech32Address);
       const carsWithParts = await Promise.all(userCars.map(async (car: Car) => {
         const parts = await web3Service.getCarParts(car.id);
         return {
@@ -48,7 +49,7 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
       }));
       
       // Cargar todas las partes disponibles
-      const userParts = await partsService.getUserParts(address);
+      const userParts = await partsService.getUserParts(account.bech32Address);
       
       setCars(carsWithParts);
       setAvailableParts(userParts);
@@ -62,7 +63,7 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
 
   useEffect(() => {
     loadData();
-  }, [address]);
+  }, [account.bech32Address, client]);
 
   const handleCarSelect = (car: Car) => {
     setSelectedCarId(car.id);
@@ -103,7 +104,6 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
       await loadData(); // Recargar datos después de equipar
     } catch (error) {
       console.error('Error equipando parte:', error);
-      // Aquí podrías mostrar un mensaje de error al usuario usando un toast o similar
       throw error;
     }
   };
@@ -169,6 +169,7 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
             isSelected={car.id === selectedCarId}
             alternativeSkin={alternativeSkin}
             isListed={listedCars?.has(car.id)}
+            onCancelListing={onCancelListing}
           />
         </Grid>
       ))}

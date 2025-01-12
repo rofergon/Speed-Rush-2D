@@ -3,8 +3,8 @@ import { Leaderboard } from '../components/Leaderboard';
 import { Home, Gamepad2, Car as CarIcon, Wrench } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/unity.css';
-import { ConnectKitButton } from "connectkit";
-import { useAccount } from "wagmi";
+import { useAbstraxionAccount, useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
+import { XionConnectButton } from '../components/XionConnectButton';
 import { web3Service } from '../services/web3Service';
 import { activeCarService } from '../services/activeCarService';
 import type { Car } from '../types/car';
@@ -24,7 +24,8 @@ interface UnityInstance {
 }
 
 export function GamePage() {
-  const { address, isConnected } = useAccount();
+  const { data: account } = useAbstraxionAccount();
+  const { client } = useAbstraxionSigningClient();
   const [unityInstance, setUnityInstance] = useState<UnityInstance | null>(null);
   const [unityLoaded, setUnityLoaded] = useState(false);
   const [userCars, setUserCars] = useState<Car[]>([]);
@@ -36,8 +37,8 @@ export function GamePage() {
   // Función para cargar los carros del usuario
   const loadUserCars = async () => {
     try {
-      if (!address) return;
-      const cars = await web3Service.getUserCars(address);
+      if (!account.bech32Address) return;
+      const cars = await web3Service.getUserCars(account.bech32Address);
       setUserCars(cars);
       // Seleccionar 7 carros aleatorios
       const shuffled = [...cars].sort(() => 0.5 - Math.random());
@@ -98,10 +99,10 @@ export function GamePage() {
 
   // Cargar carros cuando el usuario se conecta
   useEffect(() => {
-    if (isConnected && address) {
+    if (client && account.bech32Address) {
       loadUserCars();
     }
-  }, [isConnected, address]);
+  }, [client, account.bech32Address]);
 
   // Efecto para recargar la imagen cuando cambie la skin
   useEffect(() => {
@@ -111,7 +112,7 @@ export function GamePage() {
   }, [isAlternativeSkin, unityLoaded]);
 
   useEffect(() => {
-    if (!isConnected || !isGameStarted) {
+    if (!client || !isGameStarted) {
       return; // Don't load Unity if not connected or game not started
     }
 
@@ -242,7 +243,7 @@ export function GamePage() {
         document.body.removeChild(unityScript);
       }
     };
-  }, [isConnected, address, navigate, isGameStarted]);
+  }, [client, account.bech32Address, navigate, isGameStarted]);
 
   // Efecto para cargar la imagen cuando Unity esté listo
   useEffect(() => {
@@ -293,18 +294,18 @@ export function GamePage() {
                 <CarIcon className="inline-block w-5 h-5 mr-1" />
                 Market
               </Link>
-              <ConnectKitButton />
+              <XionConnectButton />
             </div>
           </div>
         </div>
       </nav>
 
       <div className="max-w-[98%] mx-auto px-4 py-8">
-        {!isConnected ? (
+        {!client ? (
           <div className="text-center py-20">
             <h2 className="text-2xl font-bold mb-4">Connect Your Wallet to Play</h2>
             <p className="text-gray-400 mb-8">You need to connect your wallet to access the game</p>
-            <ConnectKitButton />
+            <XionConnectButton />
           </div>
         ) : !isGameStarted ? (
           <div className="text-center py-20">

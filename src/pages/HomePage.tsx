@@ -1,14 +1,14 @@
 import React from 'react';
 import { Gamepad2, Car, Trophy, Users, ChevronRight, Github, Wrench } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ConnectKitButton } from "connectkit";
-import { useAccount } from "wagmi";
+import { useAbstraxionAccount } from "@burnt-labs/abstraxion";
+import { XionConnectButton } from '../components/XionConnectButton';
 import { GameInfo } from '../components/GameInfo';
 import { MintCarButton } from '../components/MintCarButton';
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { isConnected } = useAccount();
+  const { data: account } = useAbstraxionAccount();
 
   const goToGame = () => {
     navigate('/game');
@@ -47,7 +47,7 @@ export function HomePage() {
                 <Car className="inline-block w-5 h-5 mr-1" />
                 Market
               </Link>
-              <ConnectKitButton />
+              <XionConnectButton />
             </div>
           </div>
         </div>
@@ -78,8 +78,8 @@ export function HomePage() {
               Experience the thrill of high-speed racing in this action-packed 2D adventure
             </p>
             <div className="flex flex-col items-center space-y-4">
-              <ConnectKitButton />
-              {isConnected && (
+              <XionConnectButton />
+              {account.bech32Address && (
                 <>
                   <GameInfo />
                   <div className="flex space-x-4">
