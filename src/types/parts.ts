@@ -1,31 +1,37 @@
 export enum PartType {
-  ENGINE = 0,
-  TRANSMISSION = 1,
-  WHEELS = 2
+  Engine = "Engine",
+  Transmission = "Transmission",
+  Core = "Core"
+}
+
+export interface PartData {
+  part_type: PartType;
+  stat1: number;
+  stat2: number;
+  stat3: number;
+  image_uri: string;
 }
 
 export interface PartStats {
-  speed?: number;
-  maxSpeed?: number;
-  acceleration?: number;
-  handling?: number;
-  driftFactor?: number;
-  turnFactor?: number;
+  speed: number;
+  acceleration: number;
+  handling: number;
+  drift_factor: number;
+  turn_factor: number;
+  max_speed: number;
 }
 
 export interface Part {
-  id: string;
-  partType: number;
-  imageURI: string;
+  part_id: number;
+  part_type: PartType;
   stats: {
-    speed?: number;
-    maxSpeed?: number;
-    acceleration?: number;
-    handling?: number;
-    driftFactor?: number;
-    turnFactor?: number;
+    stat1: number;
+    stat2: number;
+    stat3: number;
+    image_uri?: string;
   };
+  slot_index?: number;
   isEquipped: boolean;
-  equippedToCarId?: string;
-  slotIndex?: number;
+  equippedToCarId?: number;
+  image_uri: string;
 } 

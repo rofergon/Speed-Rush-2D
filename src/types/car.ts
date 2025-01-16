@@ -1,21 +1,25 @@
 import { Part } from './parts';
 
 export interface CarStats {
+  image_uri: string;
   speed: number;
   acceleration: number;
   handling: number;
-  driftFactor: number;
-  turnFactor: number;
-  maxSpeed: number;
+  drift_factor: number;
+  turn_factor: number;
+  max_speed: number;
+  condition: number;
 }
 
 export interface Car {
-  id: string;
-  carImageURI: string;
-  combinedStats: CarStats;
+  car_id: number;
+  car_image_uri: string;
   parts: Part[];
-  price: number;
-  seller?: string;
-  condition: number;
-  listedAt?: number;
+  total_stats: CarStats;
+}
+
+export interface CarComposition {
+  part_ids: number[];
+  car_image_uri: string;
+  slot_occupied: boolean[];
 } 

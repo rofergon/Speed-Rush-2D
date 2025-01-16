@@ -6,11 +6,13 @@ import { CarGallery } from '../components/CarGallery';
 import { Background } from '../components/Background';
 import { MintCarButton } from '../components/MintCarButton';
 import { PartsInventory } from '../components/PartsInventory';
+import { CarCard } from '../components/CarCard';
 import { Gamepad2, Car as CarIcon, Wrench, RefreshCw } from 'lucide-react';
 import { Part } from '../types/parts';
 import { partsService } from '../services/partsService';
 import { web3Service } from '../services/web3Service';
 import { activeCarService } from '../services/activeCarService';
+import { xionService } from '../services/xionService';
 import { Car } from '../types/car';
 import { toast } from 'react-hot-toast';
 import { Button } from "@burnt-labs/ui";
@@ -32,10 +34,10 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 p-6 rounded-lg w-96">
-        <h3 className="text-xl font-bold mb-4">List Car for Sale</h3>
+        <h3 className="text-xl font-bold mb-4">Listar Carro para Venta</h3>
         
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Price (in XION)</label>
+          <label className="block text-sm font-medium mb-2">Precio (en XION)</label>
           <input
             type="number"
             value={price}
@@ -48,9 +50,9 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Include Parts:</label>
+          <label className="block text-sm font-medium mb-2">Incluir Partes:</label>
           {carParts.map((part, index) => (
-            <div key={part.id} className="flex items-center mb-2">
+            <div key={part.part_id} className="flex items-center mb-2">
               <input
                 type="checkbox"
                 checked={includeSlots[index]}
@@ -61,7 +63,7 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
                 }}
                 className="mr-2"
               />
-              <span>{`${part.partType === 0 ? 'Engine' : part.partType === 1 ? 'Transmission' : 'Wheels'}`}</span>
+              <span>{part.part_type}</span>
             </div>
           ))}
         </div>
@@ -72,7 +74,7 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
             structure="base"
             className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
           >
-            Cancel
+            Cancelar
           </Button>
           <Button
             onClick={() => onConfirm(price, includeSlots)}
@@ -80,7 +82,7 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             disabled={!price || parseFloat(price) <= 0}
           >
-            List for Sale
+            Listar para Venta
           </Button>
         </div>
       </div>
@@ -96,6 +98,8 @@ export function ProfilePage() {
   const [parts, setParts] = useState<Part[]>([]);
   const [selectedCar, setSelectedCar] = useState<Car | undefined>();
   const [isLoadingParts, setIsLoadingParts] = useState(false);
+  const [isLoadingCars, setIsLoadingCars] = useState(false);
+  const [userCars, setUserCars] = useState<Car[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [selectedCarForSale, setSelectedCarForSale] = useState<Car | null>(null);
@@ -107,21 +111,21 @@ export function ProfilePage() {
 
   useEffect(() => {
     const loadParts = async () => {
-      if (!account.bech32Address) return;
+      if (!client || !account.bech32Address) return;
       try {
         setIsLoadingParts(true);
         setError(null);
-        const userParts = await partsService.getUserParts(account.bech32Address);
+        const userParts = await partsService.getUserParts(client, account.bech32Address);
         setParts(userParts);
-      } catch (error) {
-        console.error('Error loading parts:', error);
-        setError('Error loading parts. Please try again.');
+      } catch (error: any) {
+        console.error('Error cargando partes:', error);
+        setError('Error al cargar las partes. Por favor intenta de nuevo.');
       } finally {
         setIsLoadingParts(false);
       }
     };
 
-    if (client) {
+    if (client && account.bech32Address) {
       loadParts();
     }
   }, [client, account.bech32Address]);
@@ -129,68 +133,74 @@ export function ProfilePage() {
   const handleCarSelect = async (car: Car) => {
     try {
       // Obtener los datos actualizados del carro
-      const updatedCarParts = await web3Service.getCarParts(car.id);
-      const updatedCar = {
-        ...car,
-        parts: updatedCarParts
-      };
-      setSelectedCar(updatedCar);
-      activeCarService.setActiveCar(updatedCar);
+      const updatedCarPart = await partsService.getPartDetails(client!, car.car_id);
+      if (updatedCarPart) {
+        const updatedCar: Car = {
+          car_id: car.car_id,
+          car_image_uri: car.car_image_uri,
+          parts: [updatedCarPart],
+          total_stats: car.total_stats
+        };
+        setSelectedCar(updatedCar);
+        activeCarService.setActiveCar(updatedCar);
+      }
     } catch (error) {
-      console.error('Error selecting car:', error);
-      setError('Error selecting car. Please try again.');
+      console.error('Error al seleccionar carro:', error);
+      setError('Error al seleccionar carro. Por favor intenta de nuevo.');
     }
   };
 
-  const handleEquipPart = async (partId: string, carId: string, slotIndex: number) => {
+  const handleEquipPart = async (partId: number, carId: number, slotIndex: number) => {
     try {
       setError(null);
-      await web3Service.equipPart(carId, partId, slotIndex);
-      if (account.bech32Address) {
-        const userParts = await partsService.getUserParts(account.bech32Address);
+      // TODO: Implementar equipPart en xionService
+      if (client && account.bech32Address) {
+        const userParts = await partsService.getUserParts(client, account.bech32Address);
         setParts(userParts);
         if (selectedCar) {
-          const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
-          const updatedCar = {
-            ...selectedCar,
-            parts: updatedCarParts
-          };
-          setSelectedCar(updatedCar);
-          const activeCar = activeCarService.getActiveCar();
-          if (activeCar && activeCar.id === selectedCar.id) {
+          const updatedCarPart = await partsService.getPartDetails(client, selectedCar.car_id);
+          if (updatedCarPart) {
+            const updatedCar: Car = {
+              car_id: selectedCar.car_id,
+              car_image_uri: selectedCar.car_image_uri,
+              parts: [updatedCarPart],
+              total_stats: selectedCar.total_stats
+            };
+            setSelectedCar(updatedCar);
             activeCarService.setActiveCar(updatedCar);
           }
         }
       }
     } catch (error) {
-      console.error('Error equipping part:', error);
-      setError('Error equipping part. Please try again.');
+      console.error('Error equipando parte:', error);
+      setError('Error al equipar la parte. Por favor intenta de nuevo.');
     }
   };
 
-  const handleUnequipPart = async (partId: string, carId: string) => {
+  const handleUnequipPart = async (partId: number, carId: number) => {
     try {
       setError(null);
-      await web3Service.unequipPart(carId, partId);
-      if (account.bech32Address) {
-        const userParts = await partsService.getUserParts(account.bech32Address);
+      // TODO: Implementar unequipPart en xionService
+      if (client && account.bech32Address) {
+        const userParts = await partsService.getUserParts(client, account.bech32Address);
         setParts(userParts);
         if (selectedCar) {
-          const updatedCarParts = await web3Service.getCarParts(selectedCar.id);
-          const updatedCar = {
-            ...selectedCar,
-            parts: updatedCarParts
-          };
-          setSelectedCar(updatedCar);
-          const activeCar = activeCarService.getActiveCar();
-          if (activeCar && activeCar.id === selectedCar.id) {
+          const updatedCarPart = await partsService.getPartDetails(client, selectedCar.car_id);
+          if (updatedCarPart) {
+            const updatedCar: Car = {
+              car_id: selectedCar.car_id,
+              car_image_uri: selectedCar.car_image_uri,
+              parts: [updatedCarPart],
+              total_stats: selectedCar.total_stats
+            };
+            setSelectedCar(updatedCar);
             activeCarService.setActiveCar(updatedCar);
           }
         }
       }
     } catch (error) {
-      console.error('Error unequipping part:', error);
-      setError('Error unequipping part. Please try again.');
+      console.error('Error desequipando parte:', error);
+      setError('Error al desequipar la parte. Por favor intenta de nuevo.');
     }
   };
 
@@ -198,9 +208,9 @@ export function ProfilePage() {
     const loadListedCars = async () => {
       if (!selectedCar) return;
       try {
-        const listing = await web3Service.getCarListing(selectedCar.id);
+        const listing = await web3Service.getCarListing(selectedCar.car_id.toString());
         if (listing && listing.isActive) {
-          setListedCars(prev => new Set([...prev, selectedCar.id]));
+          setListedCars(prev => new Set([...prev, selectedCar.car_id.toString()]));
         }
       } catch (error) {
         console.error('Error loading car listing:', error);
@@ -214,12 +224,12 @@ export function ProfilePage() {
     if (!selectedCarForSale) return;
     
     try {
-      await web3Service.listCarForSale(selectedCarForSale.id, price, includeSlots);
-      toast.success('Car listed successfully!');
-      setListedCars(prev => new Set([...prev, selectedCarForSale.id]));
+      // TODO: Implementar listCarForSale en xionService
+      toast.success('¡Carro listado exitosamente!');
+      setListedCars(prev => new Set([...prev, selectedCarForSale.car_id.toString()]));
     } catch (error) {
-      console.error('Error listing car:', error);
-      toast.error('Error listing car for sale');
+      console.error('Error listando carro:', error);
+      toast.error('Error al listar el carro para venta');
     } finally {
       setSellModalOpen(false);
       setSelectedCarForSale(null);
@@ -228,18 +238,40 @@ export function ProfilePage() {
 
   const handleCancelListing = async (carId: string) => {
     try {
-      await web3Service.cancelCarListing(carId);
-      toast.success('Listing cancelled successfully!');
+      // TODO: Implementar cancelCarListing en xionService
+      toast.success('¡Listado cancelado exitosamente!');
       setListedCars(prev => {
         const newSet = new Set(prev);
         newSet.delete(carId);
         return newSet;
       });
     } catch (error) {
-      console.error('Error cancelling listing:', error);
-      toast.error('Error cancelling listing');
+      console.error('Error cancelando listado:', error);
+      toast.error('Error al cancelar el listado');
     }
   };
+
+  useEffect(() => {
+    const loadUserCars = async () => {
+      if (!client || !account.bech32Address) return;
+      
+      try {
+        setIsLoadingCars(true);
+        setError(null);
+        const cars = await xionService.getUserCars(client, account.bech32Address);
+        setUserCars(cars);
+      } catch (error: any) {
+        console.error('Error cargando carros:', error);
+        setError('Error al cargar los carros. Por favor intenta de nuevo.');
+      } finally {
+        setIsLoadingCars(false);
+      }
+    };
+
+    if (client && account.bech32Address) {
+      loadUserCars();
+    }
+  }, [client, account.bech32Address]);
 
   return (
     <>
@@ -274,122 +306,93 @@ export function ProfilePage() {
           </div>
         </nav>
 
-        <div className="max-w-[98%] mx-auto px-4 py-8">
-          {!client ? (
-            <div className="text-center py-20">
-              <h2 className="text-2xl font-bold mb-4">Connect Your Wallet to View Your Garage</h2>
-              <p className="text-gray-400 mb-8">You need to connect your wallet to view and manage your vehicles</p>
+        <main className="container mx-auto px-4 py-8">
+          {!account.bech32Address ? (
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-4">Conecta tu wallet para ver tu perfil</h2>
               <XionConnectButton />
             </div>
           ) : (
             <>
-              <div className="mb-8">
-                <div className="flex justify-between items-center bg-gray-800/50 p-6 rounded-xl backdrop-blur-sm border border-gray-700/50">
-                  <div>
-                    <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">My Garage</h1>
-                    <p className="text-gray-300 text-lg">Manage and customize your NFT vehicles</p>
-                  </div>
-                  <div>
-                    <MintCarButton />
-                  </div>
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h1 className="text-3xl font-bold">Mi Perfil</h1>
+                  <p className="text-gray-400">Wallet: {account.bech32Address}</p>
                 </div>
+                <MintCarButton />
               </div>
 
-              {/* Tabs Navigation */}
-              <div className="flex border-b-2 border-gray-700/50 mb-6 bg-gray-800/30 rounded-t-xl p-2">
+              <div className="flex space-x-4 mb-6">
                 <button
-                  className={`px-8 py-4 font-bold rounded-lg transition-all duration-200 ${
-                    activeTab === 'cars'
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-                  }`}
                   onClick={() => setActiveTab('cars')}
+                  className={`flex items-center px-4 py-2 rounded-lg ${
+                    activeTab === 'cars' ? 'bg-red-600' : 'bg-gray-700'
+                  }`}
                 >
-                  My Vehicles
+                  <CarIcon className="mr-2" />
+                  Mis Carros
                 </button>
                 <button
-                  className={`px-8 py-4 font-bold rounded-lg transition-all duration-200 ${
-                    activeTab === 'parts'
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-                  }`}
                   onClick={() => setActiveTab('parts')}
+                  className={`flex items-center px-4 py-2 rounded-lg ${
+                    activeTab === 'parts' ? 'bg-red-600' : 'bg-gray-700'
+                  }`}
                 >
-                  My Parts
+                  <Wrench className="mr-2" />
+                  Partes
                 </button>
               </div>
 
               {error && (
-                <div className="bg-red-500 text-white p-4 rounded-lg mb-6">
+                <div className="bg-red-600 text-white p-4 rounded-lg mb-6">
                   {error}
                 </div>
               )}
 
-              {/* Tab Content */}
               {activeTab === 'cars' ? (
-                <div>
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex gap-4">
-                      <MintCarButton />
-                    </div>
-                    <div className="flex gap-4">
-                      {selectedCar && (
-                        <Link 
-                          to="/game"
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                        >
-                          <Gamepad2 className="w-5 h-5" />
-                          Play with this car
-                        </Link>
-                      )}
-                      <button
-                        onClick={() => handleSkinChange(!isAlternativeSkin)}
-                        className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                      >
-                        <RefreshCw className="w-5 h-5" />
-                        {isAlternativeSkin ? 'Use Main Skin' : 'Use Core Skin'}
-                      </button>
-                    </div>
+                isLoadingCars ? (
+                  <div className="text-center py-8">
+                    <RefreshCw className="animate-spin h-8 w-8 mx-auto mb-4" />
+                    <p>Cargando carros...</p>
                   </div>
-                  <CarGallery 
-                    alternativeSkin={isAlternativeSkin} 
-                    onSkinChange={handleSkinChange}
-                    onSelectCar={handleCarSelect}
-                    onSellCar={(car) => {
-                      setSelectedCarForSale(car);
-                      setSellModalOpen(true);
-                    }}
-                    listedCars={listedCars}
-                    onCancelListing={handleCancelListing}
-                  />
-                </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {userCars.map((car) => (
+                      <CarCard
+                        key={car.car_id}
+                        car={car}
+                        onCancelListing={
+                          listedCars.has(car.car_id.toString())
+                            ? () => handleCancelListing(car.car_id.toString())
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </div>
+                )
               ) : (
-                <div className="bg-gray-800 rounded-lg p-6">
-                  <PartsInventory
-                    parts={parts}
-                    selectedCar={selectedCar}
-                    onEquipPart={handleEquipPart}
-                    onUnequipPart={handleUnequipPart}
-                    isLoading={isLoadingParts}
-                  />
-                </div>
+                <PartsInventory
+                  parts={parts}
+                  isLoading={isLoadingParts}
+                  selectedCar={selectedCar}
+                  onEquipPart={handleEquipPart}
+                  onUnequipPart={handleUnequipPart}
+                />
               )}
             </>
           )}
-        </div>
+        </main>
       </div>
 
-      {selectedCarForSale && (
-        <SellModal
-          isOpen={sellModalOpen}
-          onClose={() => {
-            setSellModalOpen(false);
-            setSelectedCarForSale(null);
-          }}
-          onConfirm={handleSellCar}
-          carParts={selectedCarForSale.parts || []}
-        />
-      )}
+      <SellModal
+        isOpen={sellModalOpen}
+        onClose={() => {
+          setSellModalOpen(false);
+          setSelectedCarForSale(null);
+        }}
+        onConfirm={handleSellCar}
+        carParts={selectedCarForSale?.parts || []}
+      />
     </>
   );
 } 

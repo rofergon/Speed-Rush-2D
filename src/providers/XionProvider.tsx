@@ -7,7 +7,7 @@ export const GAME_CONTRACTS = {
   CAR_PART: "xion1nn55ch09p4a4z30am967n5n8r75m2ag3s3sujutxfmchhsxqtg3qghdg7h",
   MINT_PRICE: "100uxion",
   OWNER: "xion1nn55ch09p4a4z30am967n5n8r75m2ag3s3sujutxfmchhsxqtg3qghdg7h",
-  TREASURY: "xion10weet3zt54ul5nkc8ruc0a4ek4cn620ukqyp2su476tzzdg007nqly4vfe"
+  TREASURY: "xion16p7449azumm0s8tgcvv0mczd8z27ytz75efaw2jydvqvs5uekgpsujx9cy"
 } as const;
 
 const treasuryConfig = {

@@ -1,14 +1,8 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { GAME_CONTRACTS } from '../providers/XionProvider';
 import { toast } from 'react-hot-toast';
-
-interface PartData {
-  part_type: string;
-  stat1: number;
-  stat2: number;
-  stat3: number;
-  image_uri: string;
-}
+import { PartType, PartData } from '../types/parts';
+import axios from 'axios';
 
 interface CarMetadata {
   car_image_uri: string;
@@ -18,7 +12,7 @@ interface CarMetadata {
 interface ApiResponse {
   carImageURI: string;
   parts: {
-    partType: number;
+    partType: string;
     stat1: number;
     stat2: number;
     stat3: number;
@@ -29,22 +23,22 @@ interface ApiResponse {
 class XionService {
   private readonly API_URL = 'https://speed-rush-2d-backend-production.up.railway.app';
 
-  private getPartType(partType: number): string {
-    switch(partType) {
+  private getPartTypeString(type: number): PartType {
+    switch (type) {
       case 0:
-        return "Engine";
+        return PartType.Engine;
       case 1:
-        return "Transmission";
+        return PartType.Transmission;
       case 2:
-        return "Wheels";
+        return PartType.Wheels;
       default:
-        return "Unknown";
+        throw new Error(`Tipo de parte desconocido: ${type}`);
     }
   }
 
   private async generateCarMetadata(): Promise<CarMetadata> {
     try {
-      console.log('Iniciando generación de metadata del carro...');
+      console.log('Solicitando metadata del carro a la API...');
       
       const requestBody = {
         style: "cartoon",
@@ -53,64 +47,40 @@ class XionService {
         wheelsType: "sport"
       };
       
-      console.log('Request body:', requestBody);
-      console.log('URL de la API:', `${this.API_URL}/api/cars/generate`);
+      const response = await axios.post<ApiResponse>(
+        `${this.API_URL}/api/cars/generate`,
+        requestBody,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('Respuesta de la API:', response.data);
 
-      const response = await fetch(`${this.API_URL}/api/cars/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      console.log('Respuesta de la API:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error en la respuesta:', errorText);
-        throw new Error(`Error en la API: ${response.statusText}. Detalles: ${errorText}`);
-      }
-
-      const data: ApiResponse = await response.json();
-      console.log('Datos recibidos de la API:', data);
-
-      if (!data.carImageURI || !data.parts || !Array.isArray(data.parts)) {
-        throw new Error('Formato de respuesta inválido de la API');
-      }
-
-      const parts: PartData[] = data.parts.map(part => {
-        const mappedPart = {
-          part_type: this.getPartType(part.partType),
+      // Convertir la respuesta de la API al formato esperado
+      const metadata: CarMetadata = {
+        car_image_uri: response.data.carImageURI,
+        parts_data: response.data.parts.map(part => ({
+          part_type: this.getPartTypeString(Number(part.partType)),
           stat1: part.stat1,
           stat2: part.stat2,
           stat3: part.stat3,
           image_uri: part.imageURI
-        };
-        console.log('Parte mapeada:', mappedPart);
-        return mappedPart;
-      });
-
-      const metadata = {
-        car_image_uri: data.carImageURI,
-        parts_data: parts
+        }))
       };
       
-      console.log('Metadata final generada:', metadata);
+      console.log('Metadata del carro generada:', metadata);
       return metadata;
     } catch (error: any) {
-      console.error('Error detallado generando metadata:', {
+      console.error('Error generando metadata del carro:', {
         name: error.name,
         message: error.message,
         stack: error.stack,
         details: error
       });
-      throw error;
+      throw new Error('Error al generar la metadata del carro: ' + error.message);
     }
   }
 
@@ -127,8 +97,12 @@ class XionService {
       });
 
       const metadata = await this.generateCarMetadata();
-      console.log('Metadata generada exitosamente');
+      console.log('Metadata generada exitosamente:', metadata);
       
+      // Extraer el monto del MINT_PRICE
+      const mintPrice = GAME_CONTRACTS.MINT_PRICE.replace('uxion', '');
+
+      // Crear el mensaje para mintear el carro
       const mintMsg = {
         mint_car: {
           car_image_uri: metadata.car_image_uri,
@@ -137,40 +111,40 @@ class XionService {
       };
 
       console.log('Mensaje de minteo preparado:', JSON.stringify(mintMsg, null, 2));
-
-      // Configuración de la transacción
-      const msg = {
-        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-        value: {
-          sender: senderAddress,
-          contract: GAME_CONTRACTS.CAR_NFT,
-          msg: Buffer.from(JSON.stringify(mintMsg)).toString('base64'),
-          funds: [{
-            denom: "uxion",
-            amount: "100"
-          }]
-        }
+      console.log('Precio de minteo:', GAME_CONTRACTS.MINT_PRICE);
+      
+      // Configuración de fee solo para el gas
+      const fee = {
+        amount: [], // Array vacío ya que el granter paga el gas
+        gas: "1000000",
+        granter: treasuryAddress
       };
 
-      console.log('Mensaje configurado:', msg);
+      // Los fondos se envían por separado
+      const funds = [{ amount: mintPrice, denom: "uxion" }];
 
-      // Usar el método signAndBroadcast de XION
-      const result = await client.signAndBroadcast(
+      console.log('Configuración de fee:', fee);
+      console.log('Fondos a enviar:', funds);
+
+      // Ejecutamos el minteo con el pago incluido en funds
+      const mintResult = await client.execute(
         senderAddress,
-        [msg],
-        {
-          amount: [{
-            denom: "uxion",
-            amount: "100"
-          }],
-          gas: "500000"
-        },
-        "Mint new car NFT"
+        GAME_CONTRACTS.CAR_NFT,
+        mintMsg,
+        fee,
+        "Mint new car NFT with treasury",
+        funds // Aquí enviamos los fondos
       );
 
-      console.log('Resultado del minteo:', result);
+      console.log('Resultado del minteo:', {
+        transactionHash: mintResult.transactionHash,
+        gasUsed: mintResult.gasUsed,
+        gasWanted: mintResult.gasWanted,
+        events: mintResult.events
+      });
+
       toast.success('¡Carro minteado exitosamente!');
-      return result;
+      return mintResult;
 
     } catch (error: any) {
       console.error('Error detallado en el minteo:', {
@@ -210,6 +184,39 @@ class XionService {
         stack: error.stack,
         details: error
       });
+      throw error;
+    }
+  }
+
+  async getUserCars(
+    client: SigningCosmWasmClient,
+    ownerAddress: string
+  ) {
+    try {
+      console.log('Obteniendo carros del usuario:', ownerAddress);
+
+      const queryMsg = {
+        get_all_car_metadata: {
+          owner: ownerAddress
+        }
+      };
+
+      const response = await client.queryContractSmart(
+        GAME_CONTRACTS.CAR_NFT,
+        queryMsg
+      );
+
+      console.log('Respuesta de carros del usuario:', response);
+      return response.cars;
+
+    } catch (error: any) {
+      console.error('Error al obtener los carros del usuario:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        details: error
+      });
+      toast.error('Error al cargar los carros: ' + error.message);
       throw error;
     }
   }
