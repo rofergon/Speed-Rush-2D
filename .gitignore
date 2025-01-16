@@ -25,3 +25,6 @@ dist-ssr
 
 # Environment variables
 .env
+
+# Xion target directory
+xion contract/car_nft_contract/target/
