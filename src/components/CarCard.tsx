@@ -1,135 +1,66 @@
 import React from 'react';
-import { Card, CardContent, CardMedia, Typography, Box, IconButton, Button } from '@mui/material';
-import { Gamepad2, Settings, ShoppingCart, X } from 'lucide-react';
-import { Part } from '../types/parts';
+import { Card, CardContent, CardMedia, Typography, Button } from '@mui/material';
 import { Speedometer } from './Speedometer';
+import { FullCarMetadata } from '../services/carService';
 
-export interface CarCardProps {
-  id: string;
-  imageUrl: string;
-  stats: {
-    speed: number;
-    maxSpeed: number;
-    acceleration: number;
-    handling: number;
-    driftFactor: number;
-    turnFactor: number;
-  };
-  parts: Part[];
-  availableParts: Part[];
-  onSelect: () => void;
-  onEquipPart: (partId: string, slotType: number) => void;
-  onUnequipPart: (partId: string) => void;
-  onSell?: () => void;
-  isSelected: boolean;
-  alternativeSkin: boolean;
-  isListed?: boolean;
-  onCancelListing?: (carId: string) => void;
+interface CarCardProps {
+  car: FullCarMetadata;
+  onCancelListing?: () => Promise<void>;
 }
 
-export const CarCard: React.FC<CarCardProps> = ({
-  id,
-  imageUrl,
-  stats,
-  parts,
-  availableParts,
-  onSelect,
-  onEquipPart,
-  onUnequipPart,
-  onSell,
-  isSelected,
-  alternativeSkin,
-  isListed,
-  onCancelListing
-}) => {
+export function CarCard({ car, onCancelListing }: CarCardProps) {
   return (
-    <Card 
-      className={`relative transition-all duration-200 ${
-        isSelected 
-          ? 'ring-2 ring-red-500 transform scale-[1.02]' 
-          : 'hover:scale-[1.01]'
-      }`}
-      sx={{ 
-        backgroundColor: 'rgba(17, 24, 39, 0.7)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
-      }}
-    >
+    <Card className="bg-gray-800 text-white rounded-lg overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300">
       <CardMedia
         component="img"
         height="200"
-        image={imageUrl}
-        alt={`Car ${id}`}
-        sx={{ objectFit: 'contain', p: 2 }}
+        image={car.car_image_uri}
+        alt={`Car #${car.car_id}`}
+        className="h-48 object-cover"
       />
-      <CardContent>
-        <Box className="flex justify-between items-center mb-4">
-          <Typography variant="h6" component="div" color="white">
-            Car #{id}
-          </Typography>
-          <Box className="flex gap-2">
-            {isListed ? (
-              <Button
-                variant="contained"
-                color="error"
-                startIcon={<X />}
-                onClick={() => onCancelListing?.(id)}
-              >
-                Cancel Listing
-              </Button>
-            ) : (
-              <>
-                <IconButton 
-                  onClick={onSelect}
-                  color="primary"
-                  className="hover:bg-gray-700"
-                >
-                  <Settings className="w-5 h-5" />
-                </IconButton>
-                <IconButton 
-                  onClick={onSell}
-                  color="primary"
-                  className="hover:bg-gray-700"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                </IconButton>
-              </>
-            )}
-          </Box>
-        </Box>
+      <CardContent className="p-4">
+        <Typography variant="h5" component="div" className="mb-4">
+          Car #{car.car_id}
+        </Typography>
+        
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <Speedometer value={car.total_stats.speed} max={10} label="Velocidad" />
+          <Speedometer value={car.total_stats.acceleration} max={10} label="Aceleración" />
+          <Speedometer value={car.total_stats.handling} max={10} label="Manejo" />
+          <Speedometer value={car.total_stats.max_speed} max={10} label="Vel. Máx" />
+        </div>
 
-        <Box className="grid grid-cols-2 gap-4 mb-4">
-          <Speedometer value={stats.speed} label="Speed" max={100} />
-          <Speedometer value={stats.maxSpeed} label="Max Speed" max={100} />
-          <Speedometer value={stats.acceleration} label="Acceleration" max={100} />
-          <Speedometer value={stats.handling} label="Handling" max={100} />
-          <Speedometer value={stats.driftFactor} label="Drift" max={100} />
-          <Speedometer value={stats.turnFactor} label="Turn" max={100} />
-        </Box>
-
-        <Box className="mt-4">
-          <Typography variant="subtitle1" color="white" gutterBottom>
-            Equipped Parts:
+        <div className="mt-4">
+          <Typography variant="subtitle1" className="mb-2">
+            Partes Equipadas:
           </Typography>
-          <Box className="space-y-2">
-            {parts.map((part) => (
-              <Box key={part.id} className="flex justify-between items-center p-2 bg-gray-800 rounded">
-                <Typography variant="body2" color="white">
-                  {part.partType === 0 ? 'Engine' : part.partType === 1 ? 'Transmission' : 'Wheels'}
+          <div className="space-y-2">
+            {car.parts.map((part) => (
+              <div key={part.part_id} className="flex justify-between items-center">
+                <Typography variant="body2">
+                  {part.part_type}
                 </Typography>
-                <Button
-                  size="small"
-                  variant="contained"
-                  color="error"
-                  onClick={() => onUnequipPart(part.id)}
-                >
-                  Unequip
-                </Button>
-              </Box>
+                <div className="flex space-x-2">
+                  <Speedometer value={part.stats.speed} max={10} label="Vel" size="small" />
+                  <Speedometer value={part.stats.acceleration} max={10} label="Acel" size="small" />
+                  <Speedometer value={part.stats.handling} max={10} label="Man" size="small" />
+                </div>
+              </div>
             ))}
-          </Box>
-        </Box>
+          </div>
+        </div>
+
+        {onCancelListing && (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={onCancelListing}
+            className="mt-4 w-full"
+          >
+            Cancelar Listado
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
-}; 
+} 

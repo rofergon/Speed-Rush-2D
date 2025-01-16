@@ -1,61 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Grid, Box, Typography, CircularProgress } from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { useAbstraxionAccount, useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
+import { toast } from 'react-hot-toast';
 import { CarCard } from './CarCard';
-import { web3Service } from '../services/web3Service';
-import { partsService } from '../services/partsService';
-import { Car } from '../types/car';
-import { Part } from '../types/parts';
+import { carService, FullCarMetadata } from '../services/carService';
 
-interface CarGalleryProps {
-  alternativeSkin: boolean;
-  onSkinChange: (newState: boolean) => void;
-  onSelectCar?: (car: Car) => void;
-  onSellCar?: (car: Car) => void;
-  listedCars?: Set<string>;
-  onCancelListing?: (carId: string) => void;
-}
-
-export const CarGallery: React.FC<CarGalleryProps> = ({
-  alternativeSkin,
-  onSkinChange,
-  onSelectCar,
-  onSellCar,
-  listedCars,
-  onCancelListing
-}) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [cars, setCars] = useState<Car[]>([]);
-  const [availableParts, setAvailableParts] = useState<Part[]>([]);
-  const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
+export function CarGallery() {
   const { data: account } = useAbstraxionAccount();
   const { client } = useAbstraxionSigningClient();
+  const [cars, setCars] = useState<FullCarMetadata[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
-    if (!account.bech32Address || !client) return;
+    if (!client || !account.bech32Address) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Cargar carros y sus partes
-      const userCars = await web3Service.getUserCars(account.bech32Address);
-      const carsWithParts = await Promise.all(userCars.map(async (car: Car) => {
-        const parts = await web3Service.getCarParts(car.id);
-        return {
-          ...car,
-          parts
-        };
-      }));
-      
-      // Cargar todas las partes disponibles
-      const userParts = await partsService.getUserParts(account.bech32Address);
-      
-      setCars(carsWithParts);
-      setAvailableParts(userParts);
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Error cargando datos. Por favor intenta de nuevo.');
+      const userCars = await carService.getUserCars(client, account.bech32Address);
+      setCars(userCars);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Error cargando los carros');
     } finally {
       setIsLoading(false);
     }
@@ -63,116 +29,44 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
 
   useEffect(() => {
     loadData();
-  }, [account.bech32Address, client]);
+  }, [client, account.bech32Address]);
 
-  const handleCarSelect = (car: Car) => {
-    setSelectedCarId(car.id);
-    if (onSelectCar) {
-      onSelectCar(car);
-    }
-  };
-
-  const handleEquipPart = async (partId: string, slotType: number) => {
-    if (!selectedCarId) {
-      console.error('No hay un carro seleccionado');
-      return;
-    }
-
-    try {
-      // Validar que partId no sea undefined o vacío
-      if (!partId) {
-        console.error('ID de parte inválido:', partId);
-        throw new Error('El ID de la parte es requerido');
-      }
-
-      // Validar que slotType sea un número válido
-      if (typeof slotType !== 'number' || slotType < 0) {
-        console.error('Tipo de slot inválido:', slotType);
-        throw new Error('El tipo de slot es inválido');
-      }
-
-      console.log('Intentando equipar parte:', {
-        carId: selectedCarId,
-        partId,
-        slotType,
-        tipoPartId: typeof partId,
-        tipoSlotType: typeof slotType
-      });
-
-      await web3Service.equipPart(selectedCarId, partId, slotType);
-      console.log('Parte equipada correctamente');
-      await loadData(); // Recargar datos después de equipar
-    } catch (error) {
-      console.error('Error equipando parte:', error);
-      throw error;
-    }
-  };
-
-  const handleUnequipPart = async (partId: string) => {
-    if (!selectedCarId) return;
-    try {
-      await web3Service.unequipPart(selectedCarId, partId);
-      await loadData(); // Recargar datos después de desequipar
-    } catch (error) {
-      console.error('Error desequipando parte:', error);
-      throw error;
-    }
-  };
-
-  if (isLoading) {
+  if (!client || !account.bech32Address) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress />
-      </Box>
+      <div className="text-center text-gray-300 py-8">
+        Por favor conecta tu wallet para ver tus carros
+      </div>
     );
   }
 
-  if (error) {
+  if (isLoading) {
     return (
-      <Box textAlign="center" p={4} color="error.main">
-        <Typography variant="h6">{error}</Typography>
-      </Box>
+      <div className="text-center text-gray-300 py-8">
+        Cargando carros...
+      </div>
     );
   }
 
   if (cars.length === 0) {
     return (
-      <Box textAlign="center" p={4}>
-        <Typography variant="h6" color="text.secondary">
-          No tienes ningún carro aún. ¡Crea uno nuevo para empezar!
-        </Typography>
-      </Box>
+      <div className="text-center text-gray-300 py-8">
+        No tienes carros. ¡Mintea uno nuevo!
+      </div>
     );
   }
 
   return (
-    <Grid container spacing={3}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
       {cars.map((car) => (
-        <Grid item xs={12} sm={6} lg={4} key={car.id}>
-          <CarCard
-            id={car.id}
-            imageUrl={car.carImageURI}
-            stats={{
-              speed: car.combinedStats.speed,
-              maxSpeed: car.combinedStats.maxSpeed,
-              acceleration: car.combinedStats.acceleration,
-              handling: car.combinedStats.handling,
-              driftFactor: car.combinedStats.driftFactor,
-              turnFactor: car.combinedStats.turnFactor
-            }}
-            parts={car.parts || []}
-            availableParts={availableParts}
-            onSelect={() => handleCarSelect(car)}
-            onEquipPart={handleEquipPart}
-            onUnequipPart={handleUnequipPart}
-            onSell={onSellCar ? () => onSellCar(car) : undefined}
-            isSelected={car.id === selectedCarId}
-            alternativeSkin={alternativeSkin}
-            isListed={listedCars?.has(car.id)}
-            onCancelListing={onCancelListing}
-          />
-        </Grid>
+        <CarCard
+          key={car.car_id}
+          car={car}
+          onCancelListing={async () => {
+            // Esta función se implementará cuando tengamos el marketplace
+            toast.error('Función no implementada aún');
+          }}
+        />
       ))}
-    </Grid>
+    </div>
   );
 } 
