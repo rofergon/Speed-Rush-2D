@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAbstraxionAccount, useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
 import { Button } from "@burnt-labs/ui";
-import { web3Service } from '../services/web3Service';
 import { toast } from 'react-hot-toast';
+import { xionService } from '../services/xionService';
+import { GAME_CONTRACTS } from '../providers/XionProvider';
 
 export function MintCarButton() {
   const { data: account } = useAbstraxionAccount();
@@ -17,10 +18,16 @@ export function MintCarButton() {
 
     try {
       setIsMinting(true);
-      // TODO: Actualizar esta función cuando actualicemos web3Service para XION
-      // const price = await web3Service.getMintPrice();
-      // await web3Service.mintCar(account.bech32Address, carData, price.toString());
-      toast.success('¡Carro minteado exitosamente!');
+      
+      const result = await xionService.mintCar(
+        client,
+        account.bech32Address,
+        GAME_CONTRACTS.TREASURY
+      );
+
+      if (result) {
+        toast.success('¡Carro minteado exitosamente!');
+      }
     } catch (error) {
       console.error('Error minting car:', error);
       toast.error('Error al mintear el carro');
@@ -31,7 +38,6 @@ export function MintCarButton() {
 
   return (
     <Button
-      fullWidth
       onClick={handleMint}
       disabled={isMinting || !client}
       structure="base"

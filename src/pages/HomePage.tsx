@@ -5,6 +5,7 @@ import { useAbstraxionAccount } from "@burnt-labs/abstraxion";
 import { XionConnectButton } from '../components/XionConnectButton';
 import { GameInfo } from '../components/GameInfo';
 import { MintCarButton } from '../components/MintCarButton';
+import { GetMintPriceButton } from '../components/GetMintPriceButton';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -105,7 +106,10 @@ export function HomePage() {
                       <Car className="w-5 h-5" />
                       <span>Marketplace</span>
                     </button>
-                    <MintCarButton />
+                    <div className="flex space-x-2">
+                      <GetMintPriceButton />
+                      <MintCarButton />
+                    </div>
                   </div>
                 </>
               )}

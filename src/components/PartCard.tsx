@@ -1,239 +1,210 @@
-import React from 'react';
-import { Card, Typography, Box, Chip, Button } from '@mui/material';
+import React, { useState } from 'react';
+import { Card, CardContent, CardMedia, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Box } from '@mui/material';
+import { Speedometer } from './Speedometer';
 import { Part } from '../types/parts';
+import { Car } from '../types/car';
 
-import SpeedIcon from '@mui/icons-material/Speed';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import TuneIcon from '@mui/icons-material/Tune';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import TurnSlightRightIcon from '@mui/icons-material/TurnSlightRight';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import SettingsIcon from '@mui/icons-material/Settings';
-import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-
-interface PartCardProps extends Part {
-  onEquip?: () => void;
-  onUnequip?: () => void;
-  canEquip?: boolean;
+interface UnequipDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  imageUri: string;
 }
 
-const getPartTypeLabel = (type: number): string => {
-  switch (type) {
-    case 0:
-      return 'Engine';
-    case 1:
-      return 'Transmission';
-    case 2:
-      return 'Wheels';
-    default:
-      return 'Unknown';
-  }
-};
-
-const getPartTypeColor = (type: number): string => {
-  switch (type) {
-    case 0:
-      return '#ff4444';
-    case 1:
-      return '#44b0ff';
-    case 2:
-      return '#44ff44';
-    default:
-      return '#999999';
-  }
-};
-
-const StatDisplay = ({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) => (
-  <Box display="flex" alignItems="center" gap={1}>
-    <Box color="text.secondary" display="flex" alignItems="center">
-      {icon}
-    </Box>
-    <Typography variant="body2" color="white">
-      {label}: <strong>{value}</strong>
-    </Typography>
-  </Box>
-);
-
-export const PartCard: React.FC<PartCardProps> = ({
-  partId,
-  partType,
-  stats,
-  isEquipped,
-  equippedToCarId,
-  imageURI,
-  onEquip,
-  onUnequip,
-  canEquip
-}) => {
+function UnequipDialog({ open, onClose, onConfirm, imageUri }: UnequipDialogProps) {
   return (
-    <Card 
-      className="bg-gray-800 hover:bg-gray-700 transition-all duration-200"
-      sx={{ 
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
-          transition: 'all 0.2s ease-in-out',
-          borderColor: getPartTypeColor(partType)
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      PaperProps={{
+        style: {
+          minWidth: '360px',
+          backgroundColor: '#1a1a1a',
+          color: 'white',
+          borderRadius: '12px'
         }
       }}
     >
-      <Box 
-        sx={{
-          position: 'relative',
-          paddingTop: '75%', // 4:3 Aspect Ratio
-          overflow: 'hidden',
-          background: `linear-gradient(45deg, rgba(0,0,0,0.2), rgba(${partType === 0 ? '255,68,68' : partType === 1 ? '68,176,255' : '68,255,68'},0.1))`
-        }}
-      >
-        <Box
-          component="img"
-          src={imageURI}
-          alt={`Part ${partId}`}
+      <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+        Unequip Part
+      </DialogTitle>
+      <DialogContent sx={{ textAlign: 'center', pb: 3 }}>
+        <Box sx={{ mb: 2 }}>
+          <img 
+            src={imageUri} 
+            alt="Part" 
+            style={{ 
+              width: '160px', 
+              height: '160px', 
+              borderRadius: '12px',
+              padding: '3px',
+              backgroundColor: '#2a2a2a'
+            }} 
+          />
+        </Box>
+        <Typography>
+          Are you sure you want to unequip this part?
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+        <Button 
+          onClick={onClose}
+          variant="outlined"
           sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '85%',
-            height: '85%',
-            objectFit: 'contain',
-            filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))'
-          }}
-        />
-        <Chip 
-          label={isEquipped ? `Equipped #${equippedToCarId}` : 'Unequipped'} 
-          color={isEquipped ? "success" : "default"}
-          size="small"
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            backgroundColor: isEquipped ? 'rgba(46, 125, 50, 0.9)' : 'rgba(66, 66, 66, 0.9)',
-            backdropFilter: 'blur(4px)',
-            '& .MuiChip-label': {
-              fontWeight: 500
+            color: 'white',
+            borderColor: 'white',
+            '&:hover': {
+              borderColor: 'white',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)'
             }
           }}
-        />
-      </Box>
-
-      <Box 
-        sx={{ 
-          p: 2,
-          background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)'
-        }}
-      >
-        <Box 
-          sx={{ 
-            mb: 2,
-            pb: 2,
-            borderBottom: '1px solid rgba(255,255,255,0.1)'
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={onConfirm}
+          variant="contained"
+          sx={{
+            background: 'linear-gradient(45deg, #FF512F 30%, #F09819 90%)',
+            color: 'white',
+            '&:hover': {
+              background: 'linear-gradient(45deg, #FF512F 10%, #F09819 70%)'
+            }
           }}
         >
-          <Typography 
-            variant="h6" 
-            component="div" 
-            fontWeight="bold" 
-            color="white"
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+interface PartCardProps {
+  part: Part;
+  selectedCar?: Car;
+  onEquip: (partId: number, carId: number, slotIndex: number) => Promise<void>;
+  onUnequip: (partId: number, carId: number) => Promise<void>;
+}
+
+export function PartCard({ part, selectedCar, onEquip, onUnequip }: PartCardProps) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleEquip = async () => {
+    if (!selectedCar) return;
+    await onEquip(part.part_id, selectedCar.car_id, part.slot_index || 0);
+  };
+
+  const handleUnequipClick = () => {
+    console.log('Part state:', {
+      part_id: part.part_id,
+      isEquipped: part.isEquipped,
+      equippedToCarId: part.equippedToCarId
+    });
+    setDialogOpen(true);
+  };
+
+  const handleConfirmUnequip = async () => {
+    console.log('Confirming unequip for part:', {
+      part_id: part.part_id,
+      equippedToCarId: part.equippedToCarId
+    });
+    if (!part.equippedToCarId) {
+      console.error('No equippedToCarId found for part:', part);
+      return;
+    }
+    await onUnequip(part.part_id, part.equippedToCarId);
+    setDialogOpen(false);
+  };
+
+  const canEquip = selectedCar && !part.isEquipped && 
+    !selectedCar.parts.some(p => p.part_type === part.part_type);
+
+  return (
+    <>
+      <Card sx={{
+        backgroundColor: '#1a1a1a',
+        color: 'white',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 16px rgba(0,0,0,0.4)'
+        }
+      }}>
+        <Box sx={{
+          position: 'relative',
+          paddingTop: '56.25%', // 16:9 aspect ratio
+          background: 'linear-gradient(45deg, #FF512F 30%, #F09819 90%)',
+        }}>
+          <CardMedia
+            component="img"
+            image={part.image_uri}
+            alt={`${part.part_type} #${part.part_id}`}
             sx={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover'
             }}
-          >
-            {getPartTypeLabel(partType)}
+          />
+        </Box>
+        
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            {part.part_type} #{part.part_id}
           </Typography>
-        </Box>
+          
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 3 }}>
+            <Speedometer value={part.stats.stat1} max={10} label="Stat 1" size="small" />
+            <Speedometer value={part.stats.stat2} max={10} label="Stat 2" size="small" />
+            <Speedometer value={part.stats.stat3} max={10} label="Stat 3" size="small" />
+          </Box>
 
-        <Box className="space-y-1.5 mb-4">
-          {partType === 0 && ( // Engine
-            <>
-              <StatDisplay label="Speed" value={stats.speed} icon={<SpeedIcon />} />
-              <StatDisplay label="Max Speed" value={stats.maxSpeed} icon={<DirectionsCarIcon />} />
-              <StatDisplay label="Acceleration" value={stats.acceleration} icon={<RocketLaunchIcon />} />
-            </>
-          )}
-          {partType === 1 && ( // Transmission
-            <>
-              <StatDisplay label="Acceleration" value={stats.acceleration} icon={<RocketLaunchIcon />} />
-              <StatDisplay label="Speed" value={stats.speed} icon={<SpeedIcon />} />
-              <StatDisplay label="Handling" value={stats.handling} icon={<TuneIcon />} />
-            </>
-          )}
-          {partType === 2 && ( // Wheels
-            <>
-              <StatDisplay label="Handling" value={stats.handling} icon={<TuneIcon />} />
-              <StatDisplay label="Drift Factor" value={stats.driftFactor} icon={<CompareArrowsIcon />} />
-              <StatDisplay label="Turn Factor" value={stats.turnFactor} icon={<TurnSlightRightIcon />} />
-            </>
-          )}
-        </Box>
-
-        <Box display="flex" flexDirection="column" gap={1}>
-          {canEquip && onEquip && (
+          {part.isEquipped ? (
             <Button
-              variant="contained"
-              color="primary"
-              startIcon={<SettingsIcon />}
-              onClick={onEquip}
               fullWidth
+              variant="contained"
+              onClick={handleUnequipClick}
               sx={{
-                textTransform: 'none',
-                fontWeight: 600,
+                background: 'linear-gradient(45deg, #FF512F 30%, #F09819 90%)',
+                color: 'white',
+                py: 1,
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #FF512F 10%, #F09819 70%)'
+                }
+              }}
+            >
+              Unequip
+            </Button>
+          ) : canEquip ? (
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={handleEquip}
+              sx={{
                 background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)'
+                color: 'white',
+                py: 1,
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #2196F3 10%, #21CBF3 70%)'
+                }
               }}
             >
               Equip
             </Button>
-          )}
-          {isEquipped && onUnequip && (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<RemoveCircleOutlineIcon />}
-              onClick={onUnequip}
-              fullWidth
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                borderColor: 'rgba(244, 67, 54, 0.5)',
-                '&:hover': {
-                  borderColor: '#f44336',
-                  background: 'rgba(244, 67, 54, 0.08)'
-                },
-                '&.Mui-disabled': {
-                  borderColor: 'rgba(244, 67, 54, 0.3)',
-                  color: 'rgba(244, 67, 54, 0.3)'
-                }
-              }}
-            >
-              Desequipar
-            </Button>
-          )}
-        </Box>
+          ) : null}
+        </CardContent>
+      </Card>
 
-        <Typography 
-          variant="caption" 
-          color="text.secondary" 
-          sx={{ 
-            mt: 2, 
-            display: 'block',
-            opacity: 0.7,
-            textAlign: 'right'
-          }}
-        >
-          ID: {partId}
-        </Typography>
-      </Box>
-    </Card>
+      <UnequipDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onConfirm={handleConfirmUnequip}
+        imageUri={part.image_uri}
+      />
+    </>
   );
-}; 
+} 

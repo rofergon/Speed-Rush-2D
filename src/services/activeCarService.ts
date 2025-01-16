@@ -1,19 +1,19 @@
 import { Car } from '../types/car';
 
-const ACTIVE_CAR_KEY = 'active_car';
+class ActiveCarService {
+  private activeCar: Car | undefined;
 
-export const activeCarService = {
   setActiveCar(car: Car) {
-    localStorage.setItem(ACTIVE_CAR_KEY, JSON.stringify(car));
-  },
+    this.activeCar = car;
+  }
 
-  getActiveCar(): Car | null {
-    const stored = localStorage.getItem(ACTIVE_CAR_KEY);
-    if (!stored) return null;
-    return JSON.parse(stored);
-  },
+  getActiveCar(): Car | undefined {
+    return this.activeCar;
+  }
 
   clearActiveCar() {
-    localStorage.removeItem(ACTIVE_CAR_KEY);
+    this.activeCar = undefined;
   }
-}; 
+}
+
+export const activeCarService = new ActiveCarService(); 

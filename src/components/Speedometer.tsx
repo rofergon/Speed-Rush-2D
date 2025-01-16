@@ -5,53 +5,83 @@ export interface SpeedometerProps {
   value: number;
   max: number;
   label: string;
+  size?: 'small' | 'medium' | 'large';
 }
 
-export const Speedometer: React.FC<SpeedometerProps> = ({ value, max, label }) => {
+export function Speedometer({ value, max, label, size = 'medium' }: SpeedometerProps) {
   const percentage = (value / max) * 100;
+  const sizeMap = {
+    small: {
+      width: 40,
+      height: 40,
+      fontSize: '0.75rem'
+    },
+    medium: {
+      width: 60,
+      height: 60,
+      fontSize: '0.875rem'
+    },
+    large: {
+      width: 80,
+      height: 80,
+      fontSize: '1rem'
+    }
+  };
+
+  const { width, height, fontSize } = sizeMap[size];
 
   return (
-    <Box className="relative flex flex-col items-center">
-      <Box className="relative w-16 h-16">
+    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
         <CircularProgress
           variant="determinate"
           value={100}
-          size={64}
-          thickness={4}
           sx={{
             color: 'rgba(255, 255, 255, 0.1)',
             position: 'absolute',
-            top: 0,
-            left: 0
+            width: width,
+            height: height
           }}
         />
         <CircularProgress
           variant="determinate"
           value={percentage}
-          size={64}
-          thickness={4}
           sx={{
-            color: percentage > 75 ? '#22c55e' : percentage > 50 ? '#eab308' : '#ef4444',
-            position: 'absolute',
-            top: 0,
-            left: 0
+            color: 'primary.main',
+            width: width,
+            height: height
           }}
         />
         <Box
-          className="absolute inset-0 flex items-center justify-center"
+          sx={{
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            position: 'absolute',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          <Typography variant="caption" color="white" fontWeight="bold">
+          <Typography
+            variant="caption"
+            component="div"
+            color="white"
+            sx={{ fontSize }}
+          >
             {value}
           </Typography>
         </Box>
       </Box>
       <Typography
         variant="caption"
+        component="div"
         color="white"
-        className="mt-1 text-center"
+        sx={{ mt: 1, fontSize }}
       >
         {label}
       </Typography>
     </Box>
   );
-};
+}

@@ -1,0 +1,1 @@
+2affb7c0c4ef31e601be3ea1f1ef49e41da2490192eebc1651db1787d1d8d39f  car_part_contract.wasm
