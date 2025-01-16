@@ -43,38 +43,75 @@ class XionService {
   }
 
   private async generateCarMetadata(): Promise<CarMetadata> {
-    console.log('Usando metadata fija para pruebas...');
-    
-    // Metadata fija para pruebas
-    const metadata: CarMetadata = {
-      car_image_uri: "https://gateway.lighthouse.storage/ipfs/bafkreiexph4xjmhnqted42xiqlvjxndxr3bej6adkumdmxvnyr667233vi",
-      parts_data: [
-        {
-          part_type: "Engine",
-          stat1: 1,
-          stat2: 5,
-          stat3: 4,
-          image_uri: "https://gateway.lighthouse.storage/ipfs/bafybeidk45ji7saei3n5n63ctytgguuslhhgf4kmgyrkepef56cfkyi33u"
+    try {
+      console.log('Iniciando generación de metadata del carro...');
+      
+      const requestBody = {
+        style: "cartoon",
+        engineType: "standard",
+        transmissionType: "manual",
+        wheelsType: "sport"
+      };
+      
+      console.log('Request body:', requestBody);
+      console.log('URL de la API:', `${this.API_URL}/api/cars/generate`);
+
+      const response = await fetch(`${this.API_URL}/api/cars/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        {
-          part_type: "Transmission",
-          stat1: 1,
-          stat2: 4,
-          stat3: 4,
-          image_uri: "https://gateway.lighthouse.storage/ipfs/bafybeibb4qjha6lelejakxevu4of3jxijngj4mpsouaqngyrljgql5yolq"
-        },
-        {
-          part_type: "Wheels",
-          stat1: 9,
-          stat2: 1,
-          stat3: 4,
-          image_uri: "https://gateway.lighthouse.storage/ipfs/bafkreighqtnw5rnbxkzrn2nwxzuf7bhfqtyoqty42nnk67jzrvp2ejmcl4"
-        }
-      ]
-    };
-    
-    console.log('Metadata fija:', metadata);
-    return metadata;
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log('Respuesta de la API:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error en la respuesta:', errorText);
+        throw new Error(`Error en la API: ${response.statusText}. Detalles: ${errorText}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      console.log('Datos recibidos de la API:', data);
+
+      if (!data.carImageURI || !data.parts || !Array.isArray(data.parts)) {
+        throw new Error('Formato de respuesta inválido de la API');
+      }
+
+      const parts: PartData[] = data.parts.map(part => {
+        const mappedPart = {
+          part_type: this.getPartType(part.partType),
+          stat1: part.stat1,
+          stat2: part.stat2,
+          stat3: part.stat3,
+          image_uri: part.imageURI
+        };
+        console.log('Parte mapeada:', mappedPart);
+        return mappedPart;
+      });
+
+      const metadata = {
+        car_image_uri: data.carImageURI,
+        parts_data: parts
+      };
+      
+      console.log('Metadata final generada:', metadata);
+      return metadata;
+    } catch (error: any) {
+      console.error('Error detallado generando metadata:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        details: error
+      });
+      throw error;
+    }
   }
 
   async mintCar(
