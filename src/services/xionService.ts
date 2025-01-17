@@ -263,6 +263,115 @@ class XionService {
       throw error;
     }
   }
+
+  async unequipPart(
+    client: SigningCosmWasmClient,
+    senderAddress: string,
+    treasuryAddress: string,
+    carId: number,
+    partId: number
+  ) {
+    try {
+      console.log('Desequipando parte...', {
+        carId,
+        partId,
+        senderAddress,
+        treasuryAddress
+      });
+
+      const unequipMsg = {
+        unequip_part: {
+          car_id: carId,
+          part_id: partId
+        }
+      };
+
+      // Configuración de fee solo para el gas
+      const fee = {
+        amount: [],
+        gas: "500000",
+        granter: treasuryAddress
+      };
+
+      const result = await client.execute(
+        senderAddress,
+        GAME_CONTRACTS.CAR_NFT,
+        unequipMsg,
+        fee,
+        "Unequip car part"
+      );
+
+      console.log('Parte desequipada exitosamente:', result);
+      toast.success('¡Parte desequipada exitosamente!');
+      return result;
+
+    } catch (error: any) {
+      console.error('Error al desequipar la parte:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        details: error
+      });
+      toast.error('Error al desequipar la parte: ' + error.message);
+      throw error;
+    }
+  }
+
+  async equipPart(
+    client: SigningCosmWasmClient,
+    senderAddress: string,
+    treasuryAddress: string,
+    carId: number,
+    partId: number,
+    slotIndex: number
+  ) {
+    try {
+      console.log('Equipando parte...', {
+        carId,
+        partId,
+        slotIndex,
+        senderAddress,
+        treasuryAddress
+      });
+
+      const equipMsg = {
+        equip_part: {
+          car_id: carId,
+          part_id: partId,
+          slot_index: slotIndex
+        }
+      };
+
+      // Configuración de fee solo para el gas
+      const fee = {
+        amount: [],
+        gas: "500000",
+        granter: treasuryAddress
+      };
+
+      const result = await client.execute(
+        senderAddress,
+        GAME_CONTRACTS.CAR_NFT,
+        equipMsg,
+        fee,
+        "Equip car part"
+      );
+
+      console.log('Parte equipada exitosamente:', result);
+      toast.success('¡Parte equipada exitosamente!');
+      return result;
+
+    } catch (error: any) {
+      console.error('Error al equipar la parte:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        details: error
+      });
+      toast.error('Error al equipar la parte: ' + error.message);
+      throw error;
+    }
+  }
 }
 
 const xionServiceInstance = new XionService();
