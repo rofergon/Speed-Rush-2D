@@ -14,6 +14,7 @@ import { GAME_CONTRACTS } from '../providers/XionProvider';
 import { toast } from 'react-hot-toast';
 import { partsService } from '../services/partsService';
 import { Part } from '../types/parts';
+import { useNavigate } from 'react-router-dom';
 
 interface CarCardProps {
   car: Car;
@@ -495,11 +496,41 @@ const PartDisplay = ({ part, type, car_id }: { part: any, type: string, car_id: 
 };
 
 export function CarCard({ car, onCancelListing, onSelect, selected }: CarCardProps) {
+  const navigate = useNavigate();
   const partsMap: Record<'Engine' | 'Transmission' | 'Wheels', Part | undefined> = {
-    Engine: car.parts.find(part => part.part_type === 'Engine'),
-    Transmission: car.parts.find(part => part.part_type === 'Transmission'),
-    Wheels: car.parts.find(part => part.part_type === 'Wheels')
+    Engine: car?.parts?.find(part => part?.part_type === 'Engine'),
+    Transmission: car?.parts?.find(part => part?.part_type === 'Transmission'),
+    Wheels: car?.parts?.find(part => part?.part_type === 'Wheels')
   };
+
+  const handlePlayGame = () => {
+    navigate('/game', { state: { selectedCar: car } });
+  };
+  
+  // Asegurarnos de que el carro tenga todas las propiedades necesarias
+  if (!car || !car.total_stats) {
+    return (
+      <Card 
+        sx={{ 
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(10px)',
+        }}
+      >
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h6" color="error">
+            Error: Invalid car data
+          </Typography>
+        </Box>
+      </Card>
+    );
+  }
   
   return (
     <Card 
@@ -599,7 +630,6 @@ export function CarCard({ car, onCancelListing, onSelect, selected }: CarCardPro
         <Button
           variant="contained"
           onClick={onSelect}
-          fullWidth
           sx={{
             flex: 1,
             textTransform: 'none',
@@ -616,7 +646,7 @@ export function CarCard({ car, onCancelListing, onSelect, selected }: CarCardPro
         </Button>
         <Button
           variant="contained"
-          onClick={onCancelListing}
+          onClick={handlePlayGame}
           sx={{
             textTransform: 'none',
             fontWeight: 600,
@@ -625,7 +655,7 @@ export function CarCard({ car, onCancelListing, onSelect, selected }: CarCardPro
             minWidth: '120px'
           }}
         >
-          Sell Car
+          Play
         </Button>
       </Box>
     </Card>

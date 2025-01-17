@@ -3,6 +3,7 @@ import { GAME_CONTRACTS } from '../providers/XionProvider';
 import { toast } from 'react-hot-toast';
 import { PartType, PartData } from '../types/parts';
 import axios from 'axios';
+import { Car } from "../types/car";
 
 interface CarMetadata {
   car_image_uri: string;
@@ -138,14 +139,11 @@ class XionService {
       const metadata = await this.generateCarMetadata();
       console.log('Metadata generada exitosamente:', metadata);
       
-      // Validar y corregir los datos de las partes
       const validatedPartsData = this.validateAndFixPartsData(metadata.parts_data);
       console.log('Datos de partes validados:', validatedPartsData);
       
-      // Extraer el monto del MINT_PRICE
       const mintPrice = GAME_CONTRACTS.MINT_PRICE.replace('uxion', '');
 
-      // Crear el mensaje para mintear el carro con los datos validados
       const mintMsg = {
         mint_car: {
           car_image_uri: metadata.car_image_uri,
@@ -155,28 +153,25 @@ class XionService {
 
       console.log('Mensaje de minteo preparado:', JSON.stringify(mintMsg, null, 2));
       console.log('Precio de minteo:', GAME_CONTRACTS.MINT_PRICE);
-      
-      // Configuración de fee solo para el gas
+
+      const funds = [{ amount: mintPrice, denom: "uxion" }];
+
       const fee = {
-        amount: [], // Array vacío ya que el granter paga el gas
+        amount: [],
         gas: "1000000",
         granter: treasuryAddress
       };
 
-      // Los fondos se envían por separado
-      const funds = [{ amount: mintPrice, denom: "uxion" }];
-
       console.log('Configuración de fee:', fee);
       console.log('Fondos a enviar:', funds);
 
-      // Ejecutamos el minteo con el pago incluido en funds
       const mintResult = await client.execute(
         senderAddress,
         GAME_CONTRACTS.CAR_NFT,
         mintMsg,
         fee,
         "Mint new car NFT with treasury",
-        funds // Aquí enviamos los fondos
+        funds
       );
 
       console.log('Resultado del minteo:', {
@@ -187,7 +182,60 @@ class XionService {
       });
 
       toast.success('¡Carro minteado exitosamente!');
-      return mintResult;
+      
+      // Obtener el ID del carro minteado
+      const carId = parseInt(mintResult.events
+        .find(e => e.type === 'wasm')
+        ?.attributes
+        .find(a => a.key === 'car_id')
+        ?.value || '0');
+
+      // Consultar los datos completos del carro recién minteado
+      const queryMsg = {
+        get_full_car_metadata: {
+          car_id: carId
+        }
+      };
+
+      console.log('Consultando metadata del carro minteado:', queryMsg);
+
+      const carMetadata = await client.queryContractSmart(
+        GAME_CONTRACTS.CAR_NFT,
+        queryMsg
+      );
+
+      console.log('Metadata del carro obtenida:', carMetadata);
+
+      // Construir el objeto Car con los datos reales
+      const car: Car = {
+        car_id: carId,
+        car_image_uri: metadata.car_image_uri,
+        owner: senderAddress,
+        parts: carMetadata.parts.map((part: any) => ({
+          part_id: part.part_id,
+          part_type: part.part_type,
+          stats: {
+            stat1: part.stats.stat1,
+            stat2: part.stats.stat2,
+            stat3: part.stats.stat3,
+            image_uri: part.stats.image_uri
+          },
+          isEquipped: true,
+          image_uri: part.image_uri
+        })),
+        total_stats: {
+          speed: carMetadata.total_stats.speed,
+          max_speed: carMetadata.total_stats.max_speed,
+          acceleration: carMetadata.total_stats.acceleration,
+          handling: carMetadata.total_stats.handling,
+          drift_factor: carMetadata.total_stats.drift_factor,
+          turn_factor: carMetadata.total_stats.turn_factor,
+          image_uri: metadata.car_image_uri,
+          condition: 100
+        }
+      };
+
+      return car;
 
     } catch (error: any) {
       console.error('Error detallado en el minteo:', {

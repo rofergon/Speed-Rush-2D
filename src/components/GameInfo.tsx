@@ -30,7 +30,7 @@ export function GameInfo() {
                 <br />• Composition of 3 NFT parts (engine, transmission, wheels)
                 <br />• Condition system that degrades with use
                 <br />• Combined stats from all its parts
-                <br />• Minting cost: 0.01 GRASS
+                <br />• Minting cost: 0.01 XION
               </p>
               <p className="text-xs text-gray-400 mt-3">
                 Stats include: speed, acceleration, handling, drift factor, turn factor, and max speed
@@ -105,7 +105,7 @@ export function GameInfo() {
           <div className="bg-gray-700 p-6 rounded-lg">
             <h4 className="font-semibold text-red-400 mb-3">Car Minting</h4>
             <p className="text-sm text-gray-300">
-              Minting cost: 0.01 GRASS<br />
+              Minting cost: 0.01 XION<br />
               Includes the car and its 3 NFT parts
             </p>
           </div>
@@ -113,7 +113,7 @@ export function GameInfo() {
           <div className="bg-gray-700 p-6 rounded-lg">
             <h4 className="font-semibold text-red-400 mb-3">Repairs</h4>
             <p className="text-sm text-gray-300">
-              Repair cost: 0.01 GRASS<br />
+              Repair cost: 0.01 XION<br />
               Restores condition to 100%
             </p>
           </div>
@@ -121,7 +121,7 @@ export function GameInfo() {
           <div className="bg-gray-700 p-6 rounded-lg">
             <h4 className="font-semibold text-red-400 mb-3">Lens Minting</h4>
             <p className="text-sm text-gray-300">
-              Minting cost: 0.05 GRASS<br />
+              Minting cost: 0.05 XION<br />
               100% goes to the reward pool
             </p>
           </div>
