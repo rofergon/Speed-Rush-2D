@@ -28,7 +28,7 @@ export interface Part {
     stat1: number;
     stat2: number;
     stat3: number;
-    image_uri?: string;
+    image_uri: string;
   };
   slot_index?: number;
   isEquipped: boolean;

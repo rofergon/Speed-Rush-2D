@@ -21,7 +21,7 @@ export function CarGallery() {
       setCars(userCars);
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Error cargando los carros');
+      toast.error('Error loading cars');
     } finally {
       setIsLoading(false);
     }
@@ -34,7 +34,7 @@ export function CarGallery() {
   if (!client || !account.bech32Address) {
     return (
       <div className="text-center text-gray-300 py-8">
-        Por favor conecta tu wallet para ver tus carros
+        Please connect your wallet to view your cars
       </div>
     );
   }
@@ -42,7 +42,7 @@ export function CarGallery() {
   if (isLoading) {
     return (
       <div className="text-center text-gray-300 py-8">
-        Cargando carros...
+        Loading cars...
       </div>
     );
   }
@@ -50,7 +50,7 @@ export function CarGallery() {
   if (cars.length === 0) {
     return (
       <div className="text-center text-gray-300 py-8">
-        No tienes carros. ¡Mintea uno nuevo!
+        You have no cars. Mint a new one!
       </div>
     );
   }
@@ -63,7 +63,7 @@ export function CarGallery() {
           car={car}
           onCancelListing={async () => {
             // Esta función se implementará cuando tengamos el marketplace
-            toast.error('Función no implementada aún');
+            toast.error('Function not implemented yet');
           }}
         />
       ))}

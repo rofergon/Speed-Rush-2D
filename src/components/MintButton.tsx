@@ -30,7 +30,7 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
       console.error('Error loading mint price:', error);
       toast({
         title: 'Error',
-        description: 'No se pudo cargar el precio de minteo',
+        description: 'Failed to load minting price',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -43,7 +43,7 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
 
     try {
       setIsLoading(true);
-      setMintStatus('Preparando la transacción...');
+      setMintStatus('Preparing transaction...');
       const carData = {
         carImageURI: "https://example.com/car.png",
         parts: [
@@ -75,18 +75,18 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
       const priceInWei = await web3Service.getMintPrice();
       const balance = await web3Service.getBalance(address);
       
-      console.log('Balance actual:', ethers.formatEther(balance), 'GRASS');
-      console.log('Precio a pagar:', ethers.formatEther(priceInWei), 'GRASS');
+      console.log('Current balance:', ethers.formatEther(balance), 'GRASS');
+      console.log('Price to pay:', ethers.formatEther(priceInWei), 'GRASS');
       
-      setMintStatus('Enviando transacción...');
+      setMintStatus('Sending transaction...');
       // Enviar el precio exacto en wei al contrato
       const tx = await web3Service.mintCar(address, carData, priceInWei.toString());
-      console.log('Transacción enviada:', tx);
+      console.log('Transaction sent:', tx);
 
-      setMintStatus('Esperando confirmación...');
+      setMintStatus('Waiting for confirmation...');
       toast({
-        title: 'Transacción Enviada',
-        description: 'Esperando confirmación de la red...',
+        title: 'Transaction Sent',
+        description: 'Waiting for network confirmation...',
         status: 'info',
         duration: null,
         isClosable: true,
@@ -94,17 +94,17 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
 
       // Esperar a que la transacción se confirme
       const receipt = await tx.wait();
-      console.log('Transacción confirmada:', receipt);
+      console.log('Transaction confirmed:', receipt);
 
-      setMintStatus('Obteniendo detalles del nuevo carro...');
+      setMintStatus('Fetching new car details...');
       // Obtener el ID del carro minteado del evento
       const lastTokenId = await web3Service.getLastTokenId();
-      console.log('ID del carro minteado:', lastTokenId);
+      console.log('Minted car ID:', lastTokenId);
 
       // Obtener los detalles del carro minteado
       const cars = await web3Service.getUserCars(address);
       const newCar = cars.find(car => car.id === lastTokenId.toString());
-      console.log('Detalles del carro minteado:', newCar);
+      console.log('Minted car details:', newCar);
 
       if (newCar) {
         setMintedCar(newCar);
@@ -112,8 +112,8 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
         setMintStatus('');
         
         toast({
-          title: 'Éxito',
-          description: '¡Carro minteado exitosamente!',
+          title: 'Success',
+          description: 'Car minted successfully!',
           status: 'success',
           duration: 5000,
           isClosable: true,
@@ -128,7 +128,7 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
       setMintStatus('');
       toast({
         title: 'Error',
-        description: 'Error al mintear el carro',
+        description: 'Error minting the car',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -141,15 +141,15 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
   return (
     <>
       <VStack spacing={2}>
-        <Text>Precio de Minteo: {mintPrice} GRASS</Text>
+        <Text>Mint Price: {mintPrice} XION</Text>
         <Button
           colorScheme="green"
           onClick={handleMint}
           isLoading={isLoading}
-          loadingText={mintStatus || "Minteando..."}
+          loadingText={mintStatus || "Minting..."}
           width="full"
         >
-          Mintear Nuevo Carro
+          Mint New Car
         </Button>
         {mintStatus && (
           <Text fontSize="sm" color="gray.500">
@@ -161,7 +161,7 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="xl">
         <ModalOverlay backdropFilter="blur(10px)" />
         <ModalContent bg="gray.800" color="white">
-          <ModalHeader>¡Nuevo Carro Minteado!</ModalHeader>
+          <ModalHeader>New Car Minted!</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {mintedCar && (
@@ -179,33 +179,33 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
 
                 <Grid templateColumns="repeat(2, 1fr)" gap={4}>
                   <Stat>
-                    <StatLabel>Velocidad</StatLabel>
+                    <StatLabel>Speed</StatLabel>
                     <StatNumber>{mintedCar.combinedStats.speed}</StatNumber>
                   </Stat>
                   <Stat>
-                    <StatLabel>Aceleración</StatLabel>
+                    <StatLabel>Acceleration</StatLabel>
                     <StatNumber>{mintedCar.combinedStats.acceleration}</StatNumber>
                   </Stat>
                   <Stat>
-                    <StatLabel>Manejo</StatLabel>
+                    <StatLabel>Handling</StatLabel>
                     <StatNumber>{mintedCar.combinedStats.handling}</StatNumber>
                   </Stat>
                   <Stat>
-                    <StatLabel>Factor de Derrape</StatLabel>
+                    <StatLabel>Drift Factor</StatLabel>
                     <StatNumber>{mintedCar.combinedStats.driftFactor}</StatNumber>
                   </Stat>
                   <Stat>
-                    <StatLabel>Factor de Giro</StatLabel>
+                    <StatLabel>Turn Factor</StatLabel>
                     <StatNumber>{mintedCar.combinedStats.turnFactor}</StatNumber>
                   </Stat>
                   <Stat>
-                    <StatLabel>Velocidad Máxima</StatLabel>
+                    <StatLabel>Max Speed</StatLabel>
                     <StatNumber>{mintedCar.combinedStats.maxSpeed}</StatNumber>
                   </Stat>
                 </Grid>
 
                 <Box mt={6}>
-                  <Text fontWeight="bold" mb={2}>Partes Equipadas:</Text>
+                  <Text fontWeight="bold" mb={2}>Equipped Parts:</Text>
                   {mintedCar.parts.map((part, index) => (
                     <Flex key={part.id} align="center" mb={2}>
                       <Image
@@ -215,8 +215,8 @@ export function MintButton({ onMintSuccess }: MintButtonProps) {
                         mr={2}
                       />
                       <Text>
-                        {part.partType === 0 ? 'Motor' : 
-                         part.partType === 1 ? 'Transmisión' : 'Núcleo'}
+                        {part.partType === 0 ? 'Engine' : 
+                         part.partType === 1 ? 'Transmission' : 'Core'}
                       </Text>
                     </Flex>
                   ))}

@@ -13,6 +13,7 @@ import { xionService } from '../services/xionService';
 import { GAME_CONTRACTS } from '../providers/XionProvider';
 import { toast } from 'react-hot-toast';
 import { partsService } from '../services/partsService';
+import { Part } from '../types/parts';
 
 interface CarCardProps {
   car: Car;
@@ -38,17 +39,6 @@ interface AvailablePartsDialogProps {
   availableParts: any[];
   onSelectPart: (partId: number) => void;
   isLoading?: boolean;
-}
-
-interface Part {
-  part_id: number;
-  part_type: 'Engine' | 'Transmission' | 'Wheels';
-  stats: {
-    stat1: number;
-    stat2: number;
-    stat3: number;
-    image_uri: string;
-  };
 }
 
 const partTypes: Array<'Engine' | 'Transmission' | 'Wheels'> = ['Engine', 'Transmission', 'Wheels'];
@@ -160,12 +150,12 @@ const AvailablePartsDialog = ({
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Cargando partes disponibles...
+            Loading parts...
           </span>
         </Box>
       ) : availableParts.length === 0 ? (
         <Typography sx={{ textAlign: 'center', color: 'gray' }}>
-          No hay partes disponibles de este tipo
+          No parts available of this type
         </Typography>
       ) : (
         <Grid container spacing={2}>
@@ -266,7 +256,7 @@ const PartDisplay = ({ part, type, car_id }: { part: any, type: string, car_id: 
 
   const loadAvailableParts = async () => {
     if (!client || !account.bech32Address) {
-      toast.error('Por favor conecta tu wallet primero');
+      toast.error('Please connect your wallet first');
       return;
     }
 
@@ -279,7 +269,7 @@ const PartDisplay = ({ part, type, car_id }: { part: any, type: string, car_id: 
       setAvailableParts(availableParts);
     } catch (error) {
       console.error('Error loading available parts:', error);
-      toast.error('Error al cargar las partes disponibles');
+      toast.error('Error loading available parts');
     } finally {
       setIsLoadingParts(false);
     }
@@ -296,7 +286,7 @@ const PartDisplay = ({ part, type, car_id }: { part: any, type: string, car_id: 
 
   const handleConfirmUnequip = async () => {
     if (!client || !account.bech32Address) {
-      toast.error('Por favor conecta tu wallet primero');
+      toast.error('Please connect your wallet first');
       return;
     }
 
@@ -315,8 +305,8 @@ const PartDisplay = ({ part, type, car_id }: { part: any, type: string, car_id: 
       window.location.reload();
       
     } catch (error) {
-      console.error('Error al desequipar parte:', error);
-      toast.error('Error al desequipar la parte');
+      console.error('Error unequipping part:', error);
+      toast.error('Error unequipping the part');
     } finally {
       setIsUnequipping(false);
     }
@@ -324,7 +314,7 @@ const PartDisplay = ({ part, type, car_id }: { part: any, type: string, car_id: 
 
   const handleSelectPart = async (partId: number) => {
     if (!client || !account.bech32Address) {
-      toast.error('Por favor conecta tu wallet primero');
+      toast.error('Please connect your wallet first');
       return;
     }
 
@@ -342,8 +332,8 @@ const PartDisplay = ({ part, type, car_id }: { part: any, type: string, car_id: 
       setAvailablePartsDialogOpen(false);
       window.location.reload();
     } catch (error) {
-      console.error('Error al equipar parte:', error);
-      toast.error('Error al equipar la parte');
+      console.error('Error equipping the part:', error);
+      toast.error('Error equipping the part');
     }
   };
 
@@ -482,7 +472,7 @@ const PartDisplay = ({ part, type, car_id }: { part: any, type: string, car_id: 
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Desequipando...
+                  Unequipping...
                 </span>
               </>
             ) : (
