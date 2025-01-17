@@ -1,7 +1,7 @@
 export enum PartType {
   Engine = "Engine",
   Transmission = "Transmission",
-  Core = "Core"
+  Wheels = "Wheels"
 }
 
 export interface PartData {
@@ -23,7 +23,7 @@ export interface PartStats {
 
 export interface Part {
   part_id: number;
-  part_type: PartType;
+  part_type: string;
   stats: {
     stat1: number;
     stat2: number;
