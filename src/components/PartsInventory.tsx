@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Grid } from '@mui/material';
-import { Part, PartType } from '../types/parts';
+import { Part } from '../types/parts';
 import { Car } from '../types/car';
 import { PartCard } from './PartCard';
 import { RefreshCw } from 'lucide-react';
@@ -13,6 +13,19 @@ interface PartsInventoryProps {
   onUnequipPart: (partId: number, carId: number) => Promise<void>;
 }
 
+function getPartTypeLabel(partType: string) {
+  switch(partType.toLowerCase()) {
+    case "engine":
+      return "Engines";
+    case "transmission":
+      return "Transmissions";
+    case "wheels":
+      return "Wheels";
+    default:
+      return "Unknown Parts";
+  }
+}
+
 export function PartsInventory({
   parts,
   selectedCar,
@@ -20,19 +33,6 @@ export function PartsInventory({
   onEquipPart,
   onUnequipPart
 }: PartsInventoryProps) {
-  const getPartTypeLabel = (partType: PartType) => {
-    switch(partType) {
-      case PartType.Engine:
-        return "Engines";
-      case PartType.Transmission:
-        return "Transmissions";
-      case PartType.Core:
-        return "Cores";
-      default:
-        return "Unknown Parts";
-    }
-  };
-
   // Agrupar partes por tipo
   const groupedParts = parts.reduce((acc, part) => {
     const type = part.part_type;
@@ -41,7 +41,7 @@ export function PartsInventory({
     }
     acc[type].push(part);
     return acc;
-  }, {} as Record<PartType, Part[]>);
+  }, {} as Record<string, Part[]>);
 
   if (isLoading) {
     return (
@@ -65,7 +65,7 @@ export function PartsInventory({
           }}
         >
           <Typography variant="h5" sx={{ mb: 3, color: 'white', fontWeight: 600 }}>
-            {getPartTypeLabel(type as PartType)}
+            {getPartTypeLabel(type)}
           </Typography>
           <Grid container spacing={3}>
             {typeParts.map((part) => (

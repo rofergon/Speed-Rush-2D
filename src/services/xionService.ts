@@ -59,17 +59,29 @@ class XionService {
       
       console.log('Respuesta de la API:', response.data);
 
+      // Definir los tipos de partes en orden
+      const partTypes = [PartType.Engine, PartType.Transmission, PartType.Wheels];
+
       // Convertir la respuesta de la API al formato esperado
       const metadata: CarMetadata = {
         car_image_uri: response.data.carImageURI,
-        parts_data: response.data.parts.map(part => ({
-          part_type: this.getPartTypeString(Number(part.partType)),
+        parts_data: response.data.parts.map((part, index) => ({
+          part_type: partTypes[index],
           stat1: part.stat1,
           stat2: part.stat2,
           stat3: part.stat3,
           image_uri: part.imageURI
         }))
       };
+      
+      // Verificar que todas las partes tengan su tipo
+      metadata.parts_data.forEach((part, index) => {
+        console.log(`Parte ${index}:`, part);
+        if (!part.part_type) {
+          console.error(`Parte ${index} no tiene tipo asignado`);
+          part.part_type = partTypes[index];
+        }
+      });
       
       console.log('Metadata del carro generada:', metadata);
       return metadata;
@@ -82,6 +94,33 @@ class XionService {
       });
       throw new Error('Error al generar la metadata del carro: ' + error.message);
     }
+  }
+
+  private validateAndFixPartsData(partsData: PartData[]): PartData[] {
+    // Tipos de partes en orden
+    const partTypes = [PartType.Engine, PartType.Transmission, PartType.Wheels];
+    
+    const validatedParts = partsData.map((part, index) => {
+      const validatedPart = { ...part };
+      
+      // Asignar el tipo correspondiente si no está presente
+      if (!validatedPart.part_type) {
+        console.log(`Asignando tipo ${partTypes[index]} a la parte ${index}:`, part);
+        validatedPart.part_type = partTypes[index];
+      }
+      
+      return validatedPart;
+    });
+
+    // Verificación final
+    validatedParts.forEach((part, index) => {
+      console.log(`Parte ${index} validada:`, part);
+      if (!part.part_type) {
+        console.error(`¡Alerta! La parte ${index} aún no tiene tipo después de la validación`);
+      }
+    });
+
+    return validatedParts;
   }
 
   async mintCar(
@@ -99,14 +138,18 @@ class XionService {
       const metadata = await this.generateCarMetadata();
       console.log('Metadata generada exitosamente:', metadata);
       
+      // Validar y corregir los datos de las partes
+      const validatedPartsData = this.validateAndFixPartsData(metadata.parts_data);
+      console.log('Datos de partes validados:', validatedPartsData);
+      
       // Extraer el monto del MINT_PRICE
       const mintPrice = GAME_CONTRACTS.MINT_PRICE.replace('uxion', '');
 
-      // Crear el mensaje para mintear el carro
+      // Crear el mensaje para mintear el carro con los datos validados
       const mintMsg = {
         mint_car: {
           car_image_uri: metadata.car_image_uri,
-          parts_data: metadata.parts_data
+          parts_data: validatedPartsData
         }
       };
 
@@ -220,6 +263,116 @@ class XionService {
       throw error;
     }
   }
+
+  async unequipPart(
+    client: SigningCosmWasmClient,
+    senderAddress: string,
+    treasuryAddress: string,
+    carId: number,
+    partId: number
+  ) {
+    try {
+      console.log('Desequipando parte...', {
+        carId,
+        partId,
+        senderAddress,
+        treasuryAddress
+      });
+
+      const unequipMsg = {
+        unequip_part: {
+          car_id: carId,
+          part_id: partId
+        }
+      };
+
+      // Configuración de fee solo para el gas
+      const fee = {
+        amount: [],
+        gas: "500000",
+        granter: treasuryAddress
+      };
+
+      const result = await client.execute(
+        senderAddress,
+        GAME_CONTRACTS.CAR_NFT,
+        unequipMsg,
+        fee,
+        "Unequip car part"
+      );
+
+      console.log('Parte desequipada exitosamente:', result);
+      toast.success('¡Parte desequipada exitosamente!');
+      return result;
+
+    } catch (error: any) {
+      console.error('Error al desequipar la parte:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        details: error
+      });
+      toast.error('Error al desequipar la parte: ' + error.message);
+      throw error;
+    }
+  }
+
+  async equipPart(
+    client: SigningCosmWasmClient,
+    senderAddress: string,
+    treasuryAddress: string,
+    carId: number,
+    partId: number,
+    slotIndex: number
+  ) {
+    try {
+      console.log('Equipando parte...', {
+        carId,
+        partId,
+        slotIndex,
+        senderAddress,
+        treasuryAddress
+      });
+
+      const equipMsg = {
+        equip_part: {
+          car_id: carId,
+          part_id: partId,
+          slot_index: slotIndex
+        }
+      };
+
+      // Configuración de fee solo para el gas
+      const fee = {
+        amount: [],
+        gas: "500000",
+        granter: treasuryAddress
+      };
+
+      const result = await client.execute(
+        senderAddress,
+        GAME_CONTRACTS.CAR_NFT,
+        equipMsg,
+        fee,
+        "Equip car part"
+      );
+
+      console.log('Parte equipada exitosamente:', result);
+      toast.success('¡Parte equipada exitosamente!');
+      return result;
+
+    } catch (error: any) {
+      console.error('Error al equipar la parte:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        details: error
+      });
+      toast.error('Error al equipar la parte: ' + error.message);
+      throw error;
+    }
+  }
 }
 
-export const xionService = new XionService(); 
+const xionServiceInstance = new XionService();
+export { xionServiceInstance as xionService }; 

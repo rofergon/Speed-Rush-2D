@@ -34,10 +34,10 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 p-6 rounded-lg w-96">
-        <h3 className="text-xl font-bold mb-4">Listar Carro para Venta</h3>
+        <h3 className="text-xl font-bold mb-4">List Car for Sale</h3>
         
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Precio (en XION)</label>
+          <label className="block text-sm font-medium mb-2">Price (in XION)</label>
           <input
             type="number"
             value={price}
@@ -50,7 +50,7 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Incluir Partes:</label>
+          <label className="block text-sm font-medium mb-2">Include Parts:</label>
           {carParts.map((part, index) => (
             <div key={part.part_id} className="flex items-center mb-2">
               <input
@@ -74,7 +74,7 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
             structure="base"
             className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
           >
-            Cancelar
+            Cancel
           </Button>
           <Button
             onClick={() => onConfirm(price, includeSlots)}
@@ -82,7 +82,7 @@ const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, onConfirm, carPa
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             disabled={!price || parseFloat(price) <= 0}
           >
-            Listar para Venta
+            List for Sale
           </Button>
         </div>
       </div>
@@ -118,8 +118,8 @@ export function ProfilePage() {
         const userParts = await partsService.getUserParts(client, account.bech32Address);
         setParts(userParts);
       } catch (error: any) {
-        console.error('Error cargando partes:', error);
-        setError('Error al cargar las partes. Por favor intenta de nuevo.');
+        console.error('Error loading parts:', error);
+        setError('Error loading parts. Please try again.');
       } finally {
         setIsLoadingParts(false);
       }
@@ -145,8 +145,8 @@ export function ProfilePage() {
         activeCarService.setActiveCar(updatedCar);
       }
     } catch (error) {
-      console.error('Error al seleccionar carro:', error);
-      setError('Error al seleccionar carro. Por favor intenta de nuevo.');
+      console.error('Error selecting car:', error);
+      setError('Error selecting car. Please try again.');
     }
   };
 
@@ -172,8 +172,8 @@ export function ProfilePage() {
         }
       }
     } catch (error) {
-      console.error('Error equipando parte:', error);
-      setError('Error al equipar la parte. Por favor intenta de nuevo.');
+      console.error('Error equipping part:', error);
+      setError('Error equipping the part. Please try again.');
     }
   };
 
@@ -199,8 +199,8 @@ export function ProfilePage() {
         }
       }
     } catch (error) {
-      console.error('Error desequipando parte:', error);
-      setError('Error al desequipar la parte. Por favor intenta de nuevo.');
+      console.error('Error unequipping part:', error);
+      setError('Error unequipping the part. Please try again.');
     }
   };
 
@@ -225,11 +225,11 @@ export function ProfilePage() {
     
     try {
       // TODO: Implementar listCarForSale en xionService
-      toast.success('¡Carro listado exitosamente!');
+      toast.success('Car listed successfully!');
       setListedCars(prev => new Set([...prev, selectedCarForSale.car_id.toString()]));
     } catch (error) {
-      console.error('Error listando carro:', error);
-      toast.error('Error al listar el carro para venta');
+      console.error('Error listing car:', error);
+      toast.error('Error listing the car for sale');
     } finally {
       setSellModalOpen(false);
       setSelectedCarForSale(null);
@@ -239,15 +239,15 @@ export function ProfilePage() {
   const handleCancelListing = async (carId: string) => {
     try {
       // TODO: Implementar cancelCarListing en xionService
-      toast.success('¡Listado cancelado exitosamente!');
+      toast.success('Listing canceled successfully!');
       setListedCars(prev => {
         const newSet = new Set(prev);
         newSet.delete(carId);
         return newSet;
       });
     } catch (error) {
-      console.error('Error cancelando listado:', error);
-      toast.error('Error al cancelar el listado');
+      console.error('Error canceling listing:', error);
+      toast.error('Error canceling the listing');
     }
   };
 
@@ -261,8 +261,8 @@ export function ProfilePage() {
         const cars = await xionService.getUserCars(client, account.bech32Address);
         setUserCars(cars);
       } catch (error: any) {
-        console.error('Error cargando carros:', error);
-        setError('Error al cargar los carros. Por favor intenta de nuevo.');
+        console.error('Error loading cars:', error);
+        setError('Error loading cars. Please try again.');
       } finally {
         setIsLoadingCars(false);
       }
@@ -309,14 +309,14 @@ export function ProfilePage() {
         <main className="container mx-auto px-4 py-8">
           {!account.bech32Address ? (
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">Conecta tu wallet para ver tu perfil</h2>
+              <h2 className="text-2xl font-bold mb-4">Connect your wallet to view your profile</h2>
               <XionConnectButton />
             </div>
           ) : (
             <>
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h1 className="text-3xl font-bold">Mi Perfil</h1>
+                  <h1 className="text-3xl font-bold">My Profile</h1>
                   <p className="text-gray-400">Wallet: {account.bech32Address}</p>
                 </div>
                 <MintCarButton />
@@ -330,7 +330,7 @@ export function ProfilePage() {
                   }`}
                 >
                   <CarIcon className="mr-2" />
-                  Mis Carros
+                  My Cars
                 </button>
                 <button
                   onClick={() => setActiveTab('parts')}
@@ -339,7 +339,7 @@ export function ProfilePage() {
                   }`}
                 >
                   <Wrench className="mr-2" />
-                  Partes
+                  Parts
                 </button>
               </div>
 
@@ -353,7 +353,7 @@ export function ProfilePage() {
                 isLoadingCars ? (
                   <div className="text-center py-8">
                     <RefreshCw className="animate-spin h-8 w-8 mx-auto mb-4" />
-                    <p>Cargando carros...</p>
+                    <p>Loading cars...</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

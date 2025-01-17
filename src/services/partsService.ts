@@ -14,34 +14,34 @@ interface Part {
 class PartsService {
   async getUserParts(client: SigningCosmWasmClient, address: string): Promise<Part[]> {
     try {
-      console.log('👤 Obteniendo partes del usuario:', address);
-      console.log('📍 Usando contrato de partes:', GAME_CONTRACTS.CAR_PART);
+      console.log('👤 Fetching user parts:', address);
+      console.log('📍 Using parts contract:', GAME_CONTRACTS.CAR_PART);
 
-      // Primero obtenemos todas las partes del usuario
+      // First, get all user parts
       const ownerPartsMsg = {
         get_owner_parts: {
           owner: address
         }
       };
 
-      console.log('📤 Query mensaje para obtener todas las partes:', ownerPartsMsg);
+      console.log('📤 Query message to fetch all parts:', ownerPartsMsg);
       const allPartIds = await client.queryContractSmart(
         GAME_CONTRACTS.CAR_PART,
         ownerPartsMsg
       );
-      console.log('📥 IDs de todas las partes:', allPartIds);
+      console.log('📥 IDs of all parts:', allPartIds);
 
       if (!Array.isArray(allPartIds) || allPartIds.length === 0) {
-        console.log('❌ No se encontraron partes para el usuario');
+        console.log('❌ No parts found for the user');
         return [];
       }
 
-      // Obtener detalles de cada parte
+      // Get details of each part
       const partsPromises = allPartIds.map(async (partId: number) => {
         try {
-          console.log('🔄 Procesando parte ID:', partId);
+          console.log('🔄 Processing part ID:', partId);
           
-          // Obtener stats de la parte
+          // Get part stats
           const statsMsg = {
             get_part_stats: {
               part_id: partId
@@ -49,7 +49,7 @@ class PartsService {
           };
           const stats = await client.queryContractSmart(GAME_CONTRACTS.CAR_PART, statsMsg);
 
-          // Verificar si está equipada y obtener el ID del carro
+          // Check if equipped and get car ID
           const equippedMsg = {
             is_equipped: {
               part_id: partId
@@ -81,20 +81,20 @@ class PartsService {
             image_uri: stats.image_uri || `https://ipfs.io/ipfs/default_part_${stats.part_type}.png`
           };
 
-          console.log('✅ Parte procesada:', part);
+          console.log('✅ Part processed:', part);
           return part;
         } catch (error) {
-          console.error(`❌ Error obteniendo detalles de la parte ${partId}:`, error);
+          console.error(`❌ Error fetching part details ${partId}:`, error);
           return null;
         }
       });
 
       const parts = await Promise.all(partsPromises);
       const filteredParts = parts.filter((part): part is Part => part !== null);
-      console.log('📦 Todas las partes procesadas:', filteredParts);
+      console.log('📦 All parts processed:', filteredParts);
       return filteredParts;
     } catch (error) {
-      console.error('❌ Error al obtener las partes del usuario:', error);
+      console.error('❌ Error fetching user parts:', error);
       throw error;
     }
   }
@@ -146,7 +146,7 @@ class PartsService {
         image_uri: stats.image_uri || `https://ipfs.io/ipfs/default_part_${typeResponse.part_type}.png`
       };
     } catch (error) {
-      console.error(`Error obteniendo detalles de la parte ${partId}:`, error);
+      console.error(`Error fetching part details ${partId}:`, error);
       return null;
     }
   }
